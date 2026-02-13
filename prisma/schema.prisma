@@ -1,0 +1,721 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  CAPTAIN
+  SECRETARY
+  TREASURER
+  KAGAWAD
+  SK_CHAIRMAN
+}
+
+enum CivilStatus {
+  SINGLE
+  MARRIED
+  WIDOWED
+  SEPARATED
+  ANNULLED
+  LIVE_IN
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum EducationalAttainment {
+  NO_FORMAL_EDUCATION
+  ELEMENTARY_LEVEL
+  ELEMENTARY_GRADUATE
+  HIGH_SCHOOL_LEVEL
+  HIGH_SCHOOL_GRADUATE
+  VOCATIONAL
+  COLLEGE_LEVEL
+  COLLEGE_GRADUATE
+  POST_GRADUATE
+}
+
+enum EmploymentStatus {
+  EMPLOYED
+  SELF_EMPLOYED
+  UNEMPLOYED
+  RETIRED
+  STUDENT
+  OFW
+}
+
+enum ResidentStatus {
+  ACTIVE
+  DECEASED
+  TRANSFERRED
+  INACTIVE
+}
+
+enum DocumentType {
+  BARANGAY_CLEARANCE
+  CERTIFICATE_OF_INDIGENCY
+  CERTIFICATE_OF_RESIDENCY
+  BUSINESS_PERMIT
+  CERTIFICATE_OF_GOOD_MORAL
+  BARANGAY_ID
+  FIRST_TIME_JOB_SEEKER
+  SOLO_PARENT_CERTIFICATE
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  READY
+  RELEASED
+  REJECTED
+  CANCELLED
+}
+
+enum BlotterStatus {
+  FILED
+  UNDER_MEDIATION
+  SETTLED
+  ESCALATED
+  CLOSED
+  WITHDRAWN
+}
+
+enum BlotterNature {
+  PHYSICAL_ASSAULT
+  VERBAL_ASSAULT
+  THEFT
+  TRESPASSING
+  NOISE_COMPLAINT
+  DOMESTIC_DISPUTE
+  PROPERTY_DAMAGE
+  ESTAFA
+  THREAT
+  OTHER
+}
+
+enum ProjectStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  SUSPENDED
+  CANCELLED
+}
+
+enum BudgetCategory {
+  PERSONAL_SERVICES
+  MAINTENANCE_AND_OTHER_OPERATING_EXPENSES
+  CAPITAL_OUTLAY
+  TRUST_FUND
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum HealthCategory {
+  SENIOR_CITIZEN
+  PWD
+  PREGNANT
+  LACTATING
+  CHILD_0_TO_5
+  MALNOURISHED
+  HYPERTENSIVE
+  DIABETIC
+}
+
+enum DisasterRiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+  SAFE
+}
+
+// =============================================================================
+// AUTH MODELS
+// =============================================================================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(SECRETARY)
+  position  String?
+  contactNo String?
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  auditLogs        AuditLog[]
+  issuedDocuments  DocumentRequest[] @relation("IssuedBy")
+  encodedDocuments DocumentRequest[] @relation("EncodedBy")
+  blottersFiled    Blotter[]         @relation("FiledBy")
+  blottersResolved Blotter[]         @relation("ResolvedBy")
+  budgetEntries    BudgetTransaction[]
+  projectsCreated  Project[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// =============================================================================
+// BARANGAY GEOGRAPHY
+// =============================================================================
+
+model Purok {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  households Household[]
+
+  @@map("puroks")
+}
+
+// =============================================================================
+// HOUSEHOLD & RESIDENT MODELS
+// =============================================================================
+
+model Household {
+  id           String  @id @default(cuid())
+  houseNo      String?
+  streetSitio  String?
+  purokId      String
+  barangay     String  @default("Taruc")
+  municipality String  @default("Socorro")
+  province     String  @default("Surigao del Norte")
+
+  // GIS Coordinates
+  latitude  Float?
+  longitude Float?
+
+  // Housing classification
+  housingType    String?
+  roofMaterial   String?
+  wallMaterial   String?
+  toiletFacility String?
+  waterSource    String?
+
+  // Special classifications
+  is4PsBeneficiary  Boolean @default(false)
+  fourPsHouseholdId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purok           Purok                     @relation(fields: [purokId], references: [id])
+  residents       Resident[]
+  disasterProfile HouseholdDisasterProfile?
+
+  @@map("households")
+}
+
+model Resident {
+  id          String  @id @default(cuid())
+  householdId String?
+
+  // Filipino Name Convention
+  firstName  String
+  middleName String?
+  lastName   String
+  suffix     String?
+
+  // Demographics
+  sex         Sex
+  dateOfBirth DateTime
+  placeOfBirth String?
+  civilStatus  CivilStatus @default(SINGLE)
+  citizenship  String      @default("Filipino")
+  religion     String?
+  bloodType    String?
+
+  // Contact
+  contactNo    String?
+  emailAddress String?
+
+  // Government IDs
+  voterStatus   Boolean @default(false)
+  voterIdNo     String?
+  philhealthNo  String?
+  sssNo         String?
+  pagibigNo     String?
+  tinNo         String?
+  nationalIdNo  String?
+
+  // Classification flags
+  isSeniorCitizen   Boolean @default(false)
+  seniorCitizenIdNo String?
+  isPwd             Boolean @default(false)
+  pwdIdNo           String?
+  pwdType           String?
+  isSoloParent      Boolean @default(false)
+  soloParentIdNo    String?
+  is4PsBeneficiary  Boolean @default(false)
+  isOFW             Boolean @default(false)
+  isIndigenousPeople Boolean @default(false)
+  indigenousGroup    String?
+  isSkMember         Boolean @default(false)
+
+  // Education & Employment
+  educationalAttainment EducationalAttainment?
+  occupation            String?
+  employmentStatus      EmploymentStatus?
+  employer              String?
+  monthlyIncome         Decimal? @db.Decimal(12, 2)
+
+  // Photo
+  photoUrl String?
+
+  // Residency
+  yearsInBarangay Int?
+  previousAddress String?
+  status          ResidentStatus @default(ACTIVE)
+
+  // Household relationship
+  isHouseholdHead    Boolean @default(false)
+  relationshipToHead String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  household              Household?        @relation(fields: [householdId], references: [id])
+  documentRequests       DocumentRequest[]
+  healthRecords          HealthRecord[]
+  blottersAsComplainant  Blotter[]         @relation("Complainant")
+  blottersAsRespondent   Blotter[]         @relation("Respondent")
+
+  @@index([lastName, firstName])
+  @@index([householdId])
+  @@index([isSeniorCitizen])
+  @@index([isPwd])
+  @@index([is4PsBeneficiary])
+  @@map("residents")
+}
+
+// =============================================================================
+// BARANGAY OFFICIALS
+// =============================================================================
+
+model BarangayOfficial {
+  id         String  @id @default(cuid())
+  firstName  String
+  middleName String?
+  lastName   String
+  suffix     String?
+
+  position    String
+  committee   String?
+  termStart   DateTime
+  termEnd     DateTime
+  isIncumbent Boolean @default(true)
+
+  contactNo String?
+  photoUrl  String?
+  signature String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("barangay_officials")
+}
+
+// =============================================================================
+// DOCUMENT MANAGEMENT
+// =============================================================================
+
+model DocumentRequest {
+  id           String       @id @default(cuid())
+  controlNo    String       @unique
+  residentId   String
+  documentType DocumentType
+  purpose      String
+
+  // Business Permit specific
+  businessName    String?
+  businessType    String?
+  businessAddress String?
+
+  status DocumentStatus @default(PENDING)
+
+  // Fees
+  officialReceipt String?
+  feeAmount       Decimal? @db.Decimal(8, 2)
+
+  // Processing
+  encodedById String?
+  issuedById  String?
+  releasedAt  DateTime?
+  remarks     String?
+  documentUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resident  Resident @relation(fields: [residentId], references: [id])
+  encodedBy User?    @relation("EncodedBy", fields: [encodedById], references: [id])
+  issuedBy  User?    @relation("IssuedBy", fields: [issuedById], references: [id])
+
+  @@index([residentId])
+  @@index([documentType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("document_requests")
+}
+
+// =============================================================================
+// BLOTTER / COMPLAINTS
+// =============================================================================
+
+model Blotter {
+  id            String        @id @default(cuid())
+  blotterNo     String        @unique
+  incidentDate  DateTime
+  incidentPlace String
+  nature        BlotterNature
+  natureDetails String?
+  narrative     String
+
+  // Parties
+  complainantId   String?
+  complainantName String?
+  respondentId    String?
+  respondentName  String?
+  witnesses       String[]
+
+  status BlotterStatus @default(FILED)
+
+  // Resolution
+  resolvedAt   DateTime?
+  resolution   String?
+  resolvedById String?
+
+  filedById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  complainant Resident?        @relation("Complainant", fields: [complainantId], references: [id])
+  respondent  Resident?        @relation("Respondent", fields: [respondentId], references: [id])
+  filedBy     User?            @relation("FiledBy", fields: [filedById], references: [id])
+  resolvedBy  User?            @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  hearings    BlotterHearing[]
+
+  @@index([blotterNo])
+  @@index([status])
+  @@index([incidentDate])
+  @@map("blotters")
+}
+
+model BlotterHearing {
+  id          String   @id @default(cuid())
+  blotterId   String
+  hearingDate DateTime
+  venue       String   @default("Barangay Hall")
+  notes       String?
+  outcome     String?
+  createdAt   DateTime @default(now())
+
+  blotter Blotter @relation(fields: [blotterId], references: [id], onDelete: Cascade)
+
+  @@map("blotter_hearings")
+}
+
+// =============================================================================
+// BUDGET & FINANCE
+// =============================================================================
+
+model BudgetYear {
+  id          String   @id @default(cuid())
+  year        Int      @unique
+  totalBudget Decimal  @db.Decimal(15, 2)
+  status      String   @default("ACTIVE")
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  allocations  BudgetAllocation[]
+  transactions BudgetTransaction[]
+
+  @@map("budget_years")
+}
+
+model BudgetAllocation {
+  id              String         @id @default(cuid())
+  budgetYearId    String
+  category        BudgetCategory
+  particulars     String
+  allocatedAmount Decimal        @db.Decimal(12, 2)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  budgetYear BudgetYear @relation(fields: [budgetYearId], references: [id])
+
+  @@map("budget_allocations")
+}
+
+model BudgetTransaction {
+  id              String          @id @default(cuid())
+  budgetYearId    String
+  type            TransactionType
+  category        BudgetCategory
+  particulars     String
+  amount          Decimal         @db.Decimal(12, 2)
+  officialReceipt String?
+  transactionDate DateTime
+  remarks         String?
+  encodedById     String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  budgetYear BudgetYear @relation(fields: [budgetYearId], references: [id])
+  encodedBy  User?      @relation(fields: [encodedById], references: [id])
+
+  @@index([budgetYearId])
+  @@index([type])
+  @@index([transactionDate])
+  @@map("budget_transactions")
+}
+
+// =============================================================================
+// PROJECTS MONITORING
+// =============================================================================
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  category    String
+  location    String?
+
+  status ProjectStatus @default(PLANNED)
+
+  startDate     DateTime?
+  targetEndDate DateTime?
+  actualEndDate DateTime?
+
+  budget      Decimal? @db.Decimal(12, 2)
+  fundSource  String?
+  contractor  String?
+
+  progressPercent Int @default(0)
+  beneficiaries   Int?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?           @relation(fields: [createdById], references: [id])
+  updates   ProjectUpdate[]
+
+  @@map("projects")
+}
+
+model ProjectUpdate {
+  id              String   @id @default(cuid())
+  projectId       String
+  updateDate      DateTime @default(now())
+  narrative       String
+  progressPercent Int?
+  photoUrl        String?
+  createdAt       DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_updates")
+}
+
+// =============================================================================
+// HEALTH RECORDS
+// =============================================================================
+
+model HealthRecord {
+  id         String         @id @default(cuid())
+  residentId String
+  category   HealthCategory
+
+  // Senior Citizen specific
+  seniorCategory String?
+
+  // PWD specific
+  disabilityType  String?
+  disabilityCause String?
+
+  // Pregnancy tracking
+  lastMenstrualPeriod DateTime?
+  expectedDueDate     DateTime?
+  deliveryDate        DateTime?
+  deliveryOutcome     String?
+
+  // Immunization (for children)
+  bcg     Boolean @default(false)
+  dpt1    Boolean @default(false)
+  dpt2    Boolean @default(false)
+  dpt3    Boolean @default(false)
+  opv1    Boolean @default(false)
+  opv2    Boolean @default(false)
+  opv3    Boolean @default(false)
+  measles Boolean @default(false)
+  hepaB1  Boolean @default(false)
+  hepaB2  Boolean @default(false)
+  hepaB3  Boolean @default(false)
+
+  // Nutritional status
+  weightKg          Decimal? @db.Decimal(5, 2)
+  heightCm          Decimal? @db.Decimal(5, 2)
+  nutritionalStatus String?
+
+  // Monitoring
+  lastVisitDate DateTime?
+  nextVisitDate DateTime?
+  notes         String?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resident Resident @relation(fields: [residentId], references: [id])
+
+  @@index([residentId])
+  @@index([category])
+  @@map("health_records")
+}
+
+// =============================================================================
+// DISASTER PREPAREDNESS
+// =============================================================================
+
+model HouseholdDisasterProfile {
+  id          String            @id @default(cuid())
+  householdId String            @unique
+  riskLevel   DisasterRiskLevel @default(LOW)
+  hazardTypes String[]
+
+  evacuationCenter     String?
+  distanceToEvacCenter Float?
+
+  hasPWD        Boolean @default(false)
+  hasSenior     Boolean @default(false)
+  hasPregnant   Boolean @default(false)
+  hasInfant     Boolean @default(false)
+  hasChronicIll Boolean @default(false)
+
+  emergencyContactName     String?
+  emergencyContactNo       String?
+  emergencyContactRelation String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id])
+
+  @@map("household_disaster_profiles")
+}
+
+model EvacuationCenter {
+  id         String   @id @default(cuid())
+  name       String
+  address    String
+  capacity   Int?
+  latitude   Float?
+  longitude  Float?
+  contactNo  String?
+  facilities String[]
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("evacuation_centers")
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// SYSTEM SETTINGS
+// =============================================================================
+
+model SystemSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
