@@ -15,6 +15,7 @@ import {
   HeartPulse,
   ShieldAlert,
   Map,
+  BarChart3,
   UserCog,
   Settings,
   Shield,
@@ -158,6 +159,22 @@ const NAVIGATION = [
         href: "/disaster",
         icon: ShieldAlert,
         roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+      },
+    ],
+  },
+  {
+    title: "Reports",
+    items: [
+      {
+        name: "Reports & Export",
+        href: "/reports",
+        icon: BarChart3,
+        roles: [
+          "SUPER_ADMIN",
+          "CAPTAIN",
+          "SECRETARY",
+          "TREASURER",
+        ] as UserRole[],
       },
     ],
   },
