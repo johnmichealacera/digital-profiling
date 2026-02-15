@@ -146,6 +146,7 @@ enum DisasterEventStatus {
   ACTIVE
   STANDDOWN
   DRILL
+  ENDED
 }
 
 // =============================================================================

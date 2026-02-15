@@ -11,14 +11,22 @@ const createSchema = z.object({
   notes: z.string().optional().nullable(),
 })
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { searchParams } = new URL(req.url)
+  const eventId = searchParams.get("eventId")
+
+  const where: { foundAt: null; disasterEventId?: string | null } = { foundAt: null }
+  if (eventId !== null && eventId !== undefined && eventId !== "") {
+    where.disasterEventId = eventId
+  }
+
   const reports = await prisma.missingPersonReport.findMany({
-    where: { foundAt: null },
+    where,
     orderBy: { reportedAt: "desc" },
     include: {
       resident: {

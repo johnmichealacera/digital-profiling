@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, ShieldAlert, MapPin, Users, AlertTriangle, Map, UserX, CheckCircle, UserPlus } from "lucide-react"
+import { Loader2, Plus, ShieldAlert, MapPin, Users, AlertTriangle, Map, UserX, CheckCircle, UserPlus, Calendar, Flag } from "lucide-react"
 import { formatResidentName } from "@/lib/utils"
 
 const DisasterMap = dynamic(
@@ -93,6 +93,18 @@ type MissingPerson = {
   disasterEvent: { id: string; title: string; status: string } | null
 }
 
+type DisasterEventItem = {
+  id: string
+  title: string
+  type: string | null
+  status: string
+  startedAt: string
+  endedAt: string | null
+  notes: string | null
+  createdAt: string
+  missingCount?: number
+}
+
 const RISK_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   HIGH: "destructive",
   MEDIUM: "secondary",
@@ -113,6 +125,20 @@ export default function DisasterPage() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [missingPersons, setMissingPersons] = useState<MissingPerson[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Disaster events ("__all__" = no event filter; Radix Select does not allow value="")
+  const [events, setEvents] = useState<DisasterEventItem[]>([])
+  const [activeEventId, setActiveEventId] = useState<string>("__all__")
+  const [eventDialogOpen, setEventDialogOpen] = useState(false)
+  const [eventTitle, setEventTitle] = useState("")
+  const [eventType, setEventType] = useState("")
+  const [eventStatus, setEventStatus] = useState("ACTIVE")
+  const [eventStartedAt, setEventStartedAt] = useState("")
+  const [eventEndedAt, setEventEndedAt] = useState("")
+  const [eventNotes, setEventNotes] = useState("")
+  const [eventSubmitting, setEventSubmitting] = useState(false)
+  const [eventEditingId, setEventEditingId] = useState<string | null>(null)
+  const [endingEventId, setEndingEventId] = useState<string | null>(null)
 
   // Evacuation center form
   const [evacDialogOpen, setEvacDialogOpen] = useState(false)
@@ -170,8 +196,20 @@ export default function DisasterPage() {
     setSummary(data.summary)
   }
 
+  async function fetchEvents() {
+    const res = await fetch("/api/disaster/events")
+    if (res.ok) {
+      const data = await res.json()
+      setEvents(data)
+    }
+  }
+
   async function fetchMissing() {
-    const res = await fetch("/api/disaster/missing")
+    const url =
+      activeEventId && activeEventId !== "__all__"
+        ? `/api/disaster/missing?eventId=${encodeURIComponent(activeEventId)}`
+        : "/api/disaster/missing"
+    const res = await fetch(url)
     if (res.ok) {
       const data = await res.json()
       setMissingPersons(data)
@@ -179,11 +217,20 @@ export default function DisasterPage() {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load
     fetchData()
+      .then(() => fetchEvents())
       .then(() => fetchMissing())
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (!loading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- refetch missing when event filter changes
+      fetchMissing()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only refetch when activeEventId changes
+  }, [activeEventId])
 
   async function handleAddCenter() {
     if (!evacName || !evacAddress) return
@@ -285,13 +332,99 @@ export default function DisasterPage() {
     fetchData()
   }
 
+  function openNewEventDialog() {
+    setEventEditingId(null)
+    setEventTitle("")
+    setEventType("__none__")
+    setEventStatus("ACTIVE")
+    setEventStartedAt(new Date().toISOString().slice(0, 16))
+    setEventEndedAt("")
+    setEventNotes("")
+    setEventDialogOpen(true)
+  }
+
+  function openEditEventDialog(ev: DisasterEventItem) {
+    setEventEditingId(ev.id)
+    setEventTitle(ev.title)
+    setEventType(ev.type ?? "__none__")
+    setEventStatus(ev.status)
+    setEventStartedAt(ev.startedAt.slice(0, 16))
+    setEventEndedAt(ev.endedAt?.slice(0, 16) ?? "")
+    setEventNotes(ev.notes ?? "")
+    setEventDialogOpen(true)
+  }
+
+  async function handleSaveEvent() {
+    if (!eventTitle.trim()) return
+    setEventSubmitting(true)
+    const isEdit = !!eventEditingId
+    const url = isEdit
+      ? `/api/disaster/events/${eventEditingId}`
+      : "/api/disaster/events"
+    const typeValue =
+      eventType && eventType !== "__none__" ? eventType.trim() : null
+    const body: Record<string, unknown> = isEdit
+      ? {
+          title: eventTitle.trim(),
+          type: typeValue,
+          status: eventStatus,
+          startedAt: eventStartedAt || new Date().toISOString(),
+          endedAt: eventEndedAt.trim() ? eventEndedAt : null,
+          notes: eventNotes.trim() || null,
+        }
+      : {
+          title: eventTitle.trim(),
+          type: typeValue,
+          status: eventStatus,
+          startedAt: eventStartedAt || new Date().toISOString(),
+          notes: eventNotes.trim() || null,
+        }
+    const res = await fetch(url, {
+      method: isEdit ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json().catch(() => ({}))
+    setEventSubmitting(false)
+    if (!res.ok) {
+      toast.error(data.error ?? "Failed to save event")
+      return
+    }
+    toast.success(isEdit ? "Event updated" : "Event created")
+    setEventDialogOpen(false)
+    fetchEvents()
+    if (!isEdit && eventStatus === "ACTIVE") setActiveEventId(data.id ?? "__all__")
+  }
+
+  async function handleEndEvent(eventId: string) {
+    setEndingEventId(eventId)
+    const res = await fetch(`/api/disaster/events/${eventId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "ENDED", endedAt: new Date().toISOString() }),
+    })
+    setEndingEventId(null)
+    if (!res.ok) {
+      toast.error("Failed to end event")
+      return
+    }
+    toast.success("Event ended")
+    if (activeEventId === eventId) setActiveEventId("__all__")
+    fetchEvents()
+    fetchMissing()
+  }
+
   async function handleReportMissing() {
     if (!selectedResidentId) return
     setReportingMissing(true)
     const res = await fetch("/api/disaster/missing", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ residentId: selectedResidentId, notes: missingNotes || null }),
+      body: JSON.stringify({
+        residentId: selectedResidentId,
+        disasterEventId: activeEventId && activeEventId !== "__all__" ? activeEventId : null,
+        notes: missingNotes || null,
+      }),
     })
     setReportingMissing(false)
     if (!res.ok) {
@@ -342,6 +475,112 @@ export default function DisasterPage() {
           Household risk assessment and evacuation center management
         </p>
       </div>
+
+      {/* Disaster event (active) */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Disaster event
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create typhoons, floods, etc. and set an active event. Missing persons and filters are tied to the selected event.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={activeEventId}
+              onValueChange={(v) => setActiveEventId(v)}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="All events" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All events</SelectItem>
+                {events.map((ev) => (
+                  <SelectItem key={ev.id} value={ev.id}>
+                    <span className="flex items-center gap-2">
+                      {ev.title}
+                      {ev.type && (
+                        <span className="text-muted-foreground text-xs">({ev.type})</span>
+                      )}
+                      <Badge variant={ev.status === "ACTIVE" ? "destructive" : "outline"} className="text-xs">
+                        {ev.status}
+                      </Badge>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={openNewEventDialog}>
+              <Flag className="mr-1 h-4 w-4" /> New event
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No disaster events yet. Create one (e.g. typhoon) to track missing persons per event.</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Started</TableHead>
+                    <TableHead>Ended</TableHead>
+                    <TableHead>Missing</TableHead>
+                    <TableHead className="w-[140px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((ev) => (
+                    <TableRow key={ev.id}>
+                      <TableCell className="font-medium">{ev.title}</TableCell>
+                      <TableCell>{ev.type ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={ev.status === "ACTIVE" ? "destructive" : "outline"}>
+                          {ev.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(ev.startedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {ev.endedAt ? new Date(ev.endedAt).toLocaleString() : "—"}
+                      </TableCell>
+                      <TableCell>{ev.missingCount ?? 0}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditEventDialog(ev)}
+                          >
+                            Edit
+                          </Button>
+                          {ev.status === "ACTIVE" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEndEvent(ev.id)}
+                              disabled={!!endingEventId}
+                            >
+                              {endingEventId === ev.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "End event"}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       {summary && (
@@ -519,13 +758,16 @@ export default function DisasterPage() {
                           ) : (
                             <div className="flex items-center gap-2">
                               <Select
-                                onValueChange={(val) => handleMarkEvacuated(p.id, val)}
-                                value=""
+                                value={p.evacuationCenterId ?? "__none__"}
+                                onValueChange={(val) =>
+                                  handleMarkEvacuated(p.id, val === "__none__" ? null : val)
+                                }
                               >
                                 <SelectTrigger className="w-[180px] h-8 text-xs">
                                   <SelectValue placeholder="Mark evacuated..." />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="__none__">Mark evacuated...</SelectItem>
                                   {evacuationCenters.map((ec) => (
                                     <SelectItem key={ec.id} value={ec.id}>
                                       {ec.name}
@@ -613,10 +855,105 @@ export default function DisasterPage() {
         </DialogContent>
       </Dialog>
 
+      {/* New / Edit disaster event dialog */}
+      <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{eventEditingId ? "Edit disaster event" : "New disaster event"}</DialogTitle>
+            <p className="text-sm text-muted-foreground font-normal">
+              Create a typhoon, flood, or other event. Set status to ACTIVE to use it for reporting missing persons.
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium">Title *</label>
+              <Input
+                placeholder="e.g. Typhoon Mario"
+                value={eventTitle}
+                onChange={(e) => setEventTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Type</label>
+              <Select
+                value={eventType || "__none__"}
+                onValueChange={setEventType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Select type</SelectItem>
+                  <SelectItem value="Typhoon">Typhoon</SelectItem>
+                  <SelectItem value="Flood">Flood</SelectItem>
+                  <SelectItem value="Earthquake">Earthquake</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Select value={eventStatus} onValueChange={setEventStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                  <SelectItem value="STANDDOWN">STANDDOWN</SelectItem>
+                  <SelectItem value="DRILL">DRILL</SelectItem>
+                  <SelectItem value="ENDED">ENDED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Started at *</label>
+              <Input
+                type="datetime-local"
+                value={eventStartedAt}
+                onChange={(e) => setEventStartedAt(e.target.value)}
+              />
+            </div>
+            {eventEditingId && (
+              <div>
+                <label className="text-sm font-medium">Ended at (optional)</label>
+                <Input
+                  type="datetime-local"
+                  value={eventEndedAt}
+                  onChange={(e) => setEventEndedAt(e.target.value)}
+                />
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium">Notes (optional)</label>
+              <Input
+                placeholder="Details..."
+                value={eventNotes}
+                onChange={(e) => setEventNotes(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={handleSaveEvent}
+              disabled={!eventTitle.trim() || eventSubmitting}
+              className="w-full"
+            >
+              {eventSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {eventEditingId ? "Update event" : "Create event"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Missing Persons */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Missing Persons</CardTitle>
+          <div>
+            <CardTitle>Missing Persons</CardTitle>
+            {activeEventId && activeEventId !== "__all__" && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Showing missing for: {events.find((e) => e.id === activeEventId)?.title ?? "Selected event"}
+              </p>
+            )}
+          </div>
           <Dialog open={missingDialogOpen} onOpenChange={setMissingDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">
@@ -626,6 +963,11 @@ export default function DisasterPage() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Report person as missing</DialogTitle>
+                <p className="text-sm text-muted-foreground font-normal">
+                  {activeEventId && activeEventId !== "__all__"
+                    ? `Linked to: ${events.find((e) => e.id === activeEventId)?.title ?? "selected event"}`
+                    : "Select a disaster event above to link this report to that event."}
+                </p>
               </DialogHeader>
               <div className="space-y-4 py-2">
                 <div>
