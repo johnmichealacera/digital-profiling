@@ -101,5 +101,124 @@ export async function GET(req: NextRequest) {
     })
   }
 
+  if (type === "disaster") {
+    const [profiles, evacuationCentersRaw, riskCounts, missingCount, missingList] =
+      await Promise.all([
+        prisma.householdDisasterProfile.findMany({
+          include: {
+            household: {
+              select: {
+                id: true,
+                houseNo: true,
+                purok: { select: { name: true } },
+                _count: { select: { residents: true } },
+              },
+            },
+            evacuationCenterRef: { select: { id: true, name: true } },
+          },
+          orderBy: { riskLevel: "asc" },
+        }),
+        prisma.evacuationCenter.findMany({
+          where: { isActive: true },
+          orderBy: { name: "asc" },
+          include: {
+            evacuatedProfiles: {
+              where: { evacuatedAt: { not: null } },
+              include: {
+                household: { select: { _count: { select: { residents: true } } } },
+              },
+            },
+          },
+        }),
+        prisma.householdDisasterProfile.groupBy({
+          by: ["riskLevel"],
+          _count: true,
+        }),
+        prisma.missingPersonReport.count({ where: { foundAt: null } }),
+        prisma.missingPersonReport.findMany({
+          where: { foundAt: null },
+          orderBy: { reportedAt: "desc" },
+          include: {
+            resident: {
+              select: {
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                suffix: true,
+                household: {
+                  select: {
+                    houseNo: true,
+                    purok: { select: { name: true } },
+                  },
+                },
+              },
+            },
+          },
+        }),
+      ])
+
+    const evacuatedProfiles = profiles.filter((p) => p.evacuatedAt != null)
+    const totalEvacuated = evacuatedProfiles.reduce(
+      (sum, p) => sum + p.household._count.residents,
+      0
+    )
+
+    const evacuationCenters = evacuationCentersRaw.map((ec) => ({
+      id: ec.id,
+      name: ec.name,
+      address: ec.address,
+      capacity: ec.capacity,
+      latitude: ec.latitude,
+      longitude: ec.longitude,
+      contactNo: ec.contactNo,
+      facilities: ec.facilities,
+      currentEvacuees: ec.evacuatedProfiles.reduce(
+        (s, p) => s + p.household._count.residents,
+        0
+      ),
+    }))
+
+    const summary = {
+      totalProfiles: profiles.length,
+      riskCounts: Object.fromEntries(riskCounts.map((r) => [r.riskLevel, r._count])),
+      vulnerableHouseholds: profiles.filter(
+        (p) =>
+          p.hasPWD ||
+          p.hasSenior ||
+          p.hasPregnant ||
+          p.hasInfant ||
+          p.hasChronicIll
+      ).length,
+      evacuationCenters: evacuationCenters.length,
+      totalEvacuated,
+      missingCount,
+    }
+
+    const missingPersons = missingList.map((r) => ({
+      id: r.id,
+      residentName: [
+        r.resident.firstName,
+        r.resident.middleName,
+        r.resident.lastName,
+        r.resident.suffix,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      household: r.resident.household
+        ? `#${r.resident.household.houseNo ?? "?"} - ${r.resident.household.purok.name}`
+        : null,
+      reportedAt: r.reportedAt.toISOString(),
+      notes: r.notes,
+    }))
+
+    return NextResponse.json({
+      type: "disaster",
+      summary,
+      profiles,
+      evacuationCenters,
+      missingPersons,
+    })
+  }
+
   return NextResponse.json({ error: "Unknown report type" }, { status: 400 })
 }
