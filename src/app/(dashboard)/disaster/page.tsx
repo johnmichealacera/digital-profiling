@@ -118,6 +118,8 @@ export default function DisasterPage() {
   const [evacAddress, setEvacAddress] = useState("")
   const [evacCapacity, setEvacCapacity] = useState("")
   const [evacContact, setEvacContact] = useState("")
+  const [evacLatitude, setEvacLatitude] = useState("")
+  const [evacLongitude, setEvacLongitude] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
   // Mark evacuated
@@ -162,6 +164,8 @@ export default function DisasterPage() {
   async function handleAddCenter() {
     if (!evacName || !evacAddress) return
     setSubmitting(true)
+    const lat = evacLatitude.trim() ? parseFloat(evacLatitude) : null
+    const lng = evacLongitude.trim() ? parseFloat(evacLongitude) : null
     const res = await fetch("/api/disaster/evacuation-centers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -170,6 +174,8 @@ export default function DisasterPage() {
         address: evacAddress,
         capacity: evacCapacity ? parseInt(evacCapacity) : null,
         contactNo: evacContact || null,
+        latitude: lat,
+        longitude: lng,
       }),
     })
     setSubmitting(false)
@@ -183,6 +189,8 @@ export default function DisasterPage() {
     setEvacAddress("")
     setEvacCapacity("")
     setEvacContact("")
+    setEvacLatitude("")
+    setEvacLongitude("")
     fetchData()
   }
 
@@ -606,6 +614,31 @@ export default function DisasterPage() {
                     <Input value={evacContact} onChange={(e) => setEvacContact(e.target.value)} />
                   </div>
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium">Latitude (map)</label>
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="e.g. 9.6215"
+                      value={evacLatitude}
+                      onChange={(e) => setEvacLatitude(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Longitude (map)</label>
+                    <Input
+                      type="number"
+                      step="any"
+                      placeholder="e.g. 125.9589"
+                      value={evacLongitude}
+                      onChange={(e) => setEvacLongitude(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Optional. Set latitude and longitude to show this center on the disaster preparedness map.
+                </p>
                 <Button onClick={handleAddCenter} disabled={submitting} className="w-full">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Add Center
