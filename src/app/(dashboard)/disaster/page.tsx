@@ -66,6 +66,8 @@ type EvacuationCenter = {
   name: string
   address: string
   capacity?: number | null
+  latitude?: number | null
+  longitude?: number | null
   contactNo?: string | null
   facilities: string[]
   isActive: boolean
@@ -659,6 +661,11 @@ export default function DisasterPage() {
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {ec.address}
                     </p>
+                    {ec.latitude != null && ec.longitude != null && (
+                      <p className="text-xs text-muted-foreground">
+                        Coordinates: {ec.latitude.toFixed(5)}, {ec.longitude.toFixed(5)}
+                      </p>
+                    )}
                     {ec.capacity != null && (
                       <p className="text-sm">Capacity: {ec.capacity.toLocaleString()} persons</p>
                     )}
