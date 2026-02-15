@@ -32,8 +32,9 @@ export async function GET(req: NextRequest) {
       middleName: true,
       lastName: true,
       suffix: true,
+      householdId: true,
       household: {
-        select: { purok: { select: { name: true } } },
+        select: { id: true, houseNo: true, purok: { select: { name: true } } },
       },
     },
   })

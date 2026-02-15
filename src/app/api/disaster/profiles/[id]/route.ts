@@ -6,7 +6,7 @@ import { z } from "zod"
 
 const updateSchema = z.object({
   evacuationCenterId: z.string().nullable(),
-  evacuatedAt: z.string().datetime().nullable(),
+  evacuatedAt: z.string().datetime().nullable().optional(),
 })
 
 export async function PATCH(

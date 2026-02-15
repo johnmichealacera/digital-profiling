@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, ShieldAlert, MapPin, Users, AlertTriangle, Map, UserX, CheckCircle } from "lucide-react"
+import { Loader2, Plus, ShieldAlert, MapPin, Users, AlertTriangle, Map, UserX, CheckCircle, UserPlus } from "lucide-react"
 import { formatResidentName } from "@/lib/utils"
 
 const DisasterMap = dynamic(
@@ -126,6 +126,28 @@ export default function DisasterPage() {
 
   // Mark evacuated
   const [evacuatingProfileId, setEvacuatingProfileId] = useState<string | null>(null)
+
+  // Add household to risk list
+  const [addProfileDialogOpen, setAddProfileDialogOpen] = useState(false)
+  const [addProfileSearchQuery, setAddProfileSearchQuery] = useState("")
+  const [addProfileSearchResults, setAddProfileSearchResults] = useState<
+    Array<{
+      id: string
+      firstName: string
+      middleName?: string | null
+      lastName: string
+      suffix?: string | null
+      householdId?: string | null
+      household?: { id: string; houseNo: string | null; purok: { name: string } } | null
+    }>
+  >([])
+  const [selectedResidentForProfile, setSelectedResidentForProfile] = useState<{
+    id: string
+    householdId: string
+    displayName: string
+    householdLabel: string
+  } | null>(null)
+  const [addProfileSubmitting, setAddProfileSubmitting] = useState(false)
 
   // Report missing
   const [missingDialogOpen, setMissingDialogOpen] = useState(false)
@@ -225,6 +247,43 @@ export default function DisasterPage() {
     }, 300)
     return () => clearTimeout(t)
   }, [missingSearchQuery])
+
+  useEffect(() => {
+    if (addProfileSearchQuery.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAddProfileSearchResults([])
+      return
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/residents/search?q=${encodeURIComponent(addProfileSearchQuery)}`)
+        .then((r) => r.json())
+        .then(setAddProfileSearchResults)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [addProfileSearchQuery])
+
+  async function handleAddProfile() {
+    const householdId = selectedResidentForProfile?.householdId
+    if (!householdId) return
+    setAddProfileSubmitting(true)
+    const res = await fetch("/api/disaster/profiles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ householdId }),
+    })
+    const data = await res.json().catch(() => ({}))
+    setAddProfileSubmitting(false)
+    if (!res.ok) {
+      toast.error(data.error ?? "Failed to add household to risk list")
+      return
+    }
+    toast.success("Household added to risk list")
+    setAddProfileDialogOpen(false)
+    setAddProfileSearchQuery("")
+    setAddProfileSearchResults([])
+    setSelectedResidentForProfile(null)
+    fetchData()
+  }
 
   async function handleReportMissing() {
     if (!selectedResidentId) return
@@ -374,12 +433,28 @@ export default function DisasterPage() {
 
       {/* Household Risk Profiles */}
       <Card>
-        <CardHeader>
-          <CardTitle>Household Risk Profiles</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Household Risk Profiles</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Add households to the risk list, then use &quot;Mark evacuated…&quot; to assign them to an evacuation center (evacuee count updates).
+            </p>
+          </div>
+          <Button onClick={() => setAddProfileDialogOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Add household to risk list
+          </Button>
         </CardHeader>
         <CardContent>
           {profiles.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No disaster profiles yet.</p>
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">No disaster profiles yet</p>
+              <p className="mb-4">Add a household by searching for a resident; their household will appear in the table. Then you can mark them as evacuated to a center.</p>
+              <Button variant="outline" onClick={() => setAddProfileDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add household to risk list
+              </Button>
+            </div>
           ) : (
             <div className="rounded-md border">
               <Table>
@@ -470,6 +545,73 @@ export default function DisasterPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Add household to risk list dialog */}
+      <Dialog open={addProfileDialogOpen} onOpenChange={setAddProfileDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add household to risk list</DialogTitle>
+            <p className="text-sm text-muted-foreground font-normal">
+              Search by resident name; their household will be added. Then use &quot;Mark evacuated…&quot; on the table to assign them to an evacuation center.
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium">Search resident *</label>
+              <Input
+                placeholder="Type name to search..."
+                value={addProfileSearchQuery}
+                onChange={(e) => {
+                  setAddProfileSearchQuery(e.target.value)
+                  setSelectedResidentForProfile(null)
+                }}
+              />
+              {addProfileSearchResults.length > 0 && (
+                <div className="mt-2 max-h-40 overflow-auto rounded border p-1">
+                  {addProfileSearchResults.map((r) => {
+                    const householdId = r.householdId ?? r.household?.id
+                    const displayName = formatResidentName(r)
+                    const houseNo = r.household?.houseNo ?? "—"
+                    const purok = r.household?.purok?.name ?? "—"
+                    const householdLabel = `House ${houseNo}, ${purok}`
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        className={`flex w-full flex-col items-start rounded px-2 py-1.5 text-left text-sm hover:bg-accent ${selectedResidentForProfile?.id === r.id ? "bg-accent" : ""}`}
+                        onClick={() => {
+                          if (!householdId) {
+                            toast.error("This resident has no household")
+                            return
+                          }
+                          setSelectedResidentForProfile({
+                            id: r.id,
+                            householdId,
+                            displayName,
+                            householdLabel,
+                          })
+                          setAddProfileSearchQuery(displayName)
+                        }}
+                      >
+                        <span>{displayName}</span>
+                        <span className="text-xs text-muted-foreground">{householdLabel}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={handleAddProfile}
+              disabled={!selectedResidentForProfile || addProfileSubmitting}
+              className="w-full"
+            >
+              {addProfileSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add to risk list
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Missing Persons */}
       <Card>
