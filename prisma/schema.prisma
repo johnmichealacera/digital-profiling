@@ -142,6 +142,12 @@ enum DisasterRiskLevel {
   SAFE
 }
 
+enum DisasterEventStatus {
+  ACTIVE
+  STANDDOWN
+  DRILL
+}
+
 // =============================================================================
 // AUTH MODELS
 // =============================================================================
@@ -340,6 +346,7 @@ model Resident {
   healthRecords          HealthRecord[]
   blottersAsComplainant  Blotter[]         @relation("Complainant")
   blottersAsRespondent   Blotter[]         @relation("Respondent")
+  missingPersonReports   MissingPersonReport[]
 
   @@index([lastName, firstName])
   @@index([householdId])
@@ -640,6 +647,23 @@ model HealthRecord {
 // DISASTER PREPAREDNESS
 // =============================================================================
 
+model DisasterEvent {
+  id         String               @id @default(cuid())
+  title      String
+  type       String?              // e.g. typhoon, flood, earthquake
+  status     DisasterEventStatus
+  startedAt  DateTime
+  endedAt    DateTime?
+  notes      String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  missingReports MissingPersonReport[]
+
+  @@index([status])
+  @@map("disaster_events")
+}
+
 model HouseholdDisasterProfile {
   id          String            @id @default(cuid())
   householdId String            @unique
@@ -647,7 +671,9 @@ model HouseholdDisasterProfile {
   hazardTypes String[]
 
   evacuationCenter     String?
+  evacuationCenterId   String?
   distanceToEvacCenter Float?
+  evacuatedAt          DateTime?
 
   hasPWD        Boolean @default(false)
   hasSenior     Boolean @default(false)
@@ -663,8 +689,10 @@ model HouseholdDisasterProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  household Household @relation(fields: [householdId], references: [id])
+  household         Household         @relation(fields: [householdId], references: [id])
+  evacuationCenterRef EvacuationCenter? @relation(fields: [evacuationCenterId], references: [id])
 
+  @@index([evacuationCenterId])
   @@map("household_disaster_profiles")
 }
 
@@ -681,7 +709,28 @@ model EvacuationCenter {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  evacuatedProfiles HouseholdDisasterProfile[]
+
   @@map("evacuation_centers")
+}
+
+model MissingPersonReport {
+  id              String         @id @default(cuid())
+  residentId      String
+  reportedAt      DateTime       @default(now())
+  foundAt         DateTime?
+  disasterEventId String?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  resident      Resident       @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  disasterEvent DisasterEvent? @relation(fields: [disasterEventId], references: [id], onDelete: SetNull)
+
+  @@index([residentId])
+  @@index([disasterEventId])
+  @@index([foundAt])
+  @@map("missing_person_reports")
 }
 
 // =============================================================================

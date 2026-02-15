@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const [profiles, evacuationCenters, riskCounts] = await Promise.all([
+  const [profiles, evacuationCentersRaw, riskCounts, missingCount] = await Promise.all([
     prisma.householdDisasterProfile.findMany({
       include: {
         household: {
@@ -20,18 +20,50 @@ export async function GET() {
             _count: { select: { residents: true } },
           },
         },
+        evacuationCenterRef: { select: { id: true, name: true } },
       },
       orderBy: { riskLevel: "asc" },
     }),
     prisma.evacuationCenter.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
+      include: {
+        evacuatedProfiles: {
+          where: { evacuatedAt: { not: null } },
+          include: {
+            household: { select: { _count: { select: { residents: true } } } },
+          },
+        },
+      },
     }),
     prisma.householdDisasterProfile.groupBy({
       by: ["riskLevel"],
       _count: true,
     }),
+    prisma.missingPersonReport.count({ where: { foundAt: null } }),
   ])
+
+  const evacuatedProfiles = profiles.filter((p) => p.evacuatedAt != null)
+  const totalEvacuated = evacuatedProfiles.reduce(
+    (sum, p) => sum + p.household._count.residents,
+    0
+  )
+
+  const evacuationCenters = evacuationCentersRaw.map((ec) => ({
+    id: ec.id,
+    name: ec.name,
+    address: ec.address,
+    capacity: ec.capacity,
+    latitude: ec.latitude,
+    longitude: ec.longitude,
+    contactNo: ec.contactNo,
+    facilities: ec.facilities,
+    isActive: ec.isActive,
+    currentEvacuees: ec.evacuatedProfiles.reduce(
+      (s, p) => s + p.household._count.residents,
+      0
+    ),
+  }))
 
   const summary = {
     totalProfiles: profiles.length,
@@ -40,7 +72,13 @@ export async function GET() {
       (p) => p.hasPWD || p.hasSenior || p.hasPregnant || p.hasInfant || p.hasChronicIll
     ).length,
     evacuationCenters: evacuationCenters.length,
+    totalEvacuated,
+    missingCount,
   }
 
-  return NextResponse.json({ profiles, evacuationCenters, summary })
+  return NextResponse.json({
+    profiles,
+    evacuationCenters,
+    summary,
+  })
 }
