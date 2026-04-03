@@ -17,9 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowLeft, Edit, Eye, MapPin, Plus } from "lucide-react"
+import { ArrowLeft, Edit, Eye, MapPin } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
 import { SEX_LABELS, CIVIL_STATUS_LABELS } from "@/lib/constants"
+import { AddHouseholdMemberDialog } from "@/components/households/add-household-member-dialog"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -146,12 +147,7 @@ export default async function HouseholdDetailPage({ params }: Props) {
             <CardTitle className="text-base">
               Members ({household.residents.length})
             </CardTitle>
-            <Button size="sm" asChild>
-              <Link href={`/residents/new?householdId=${id}`}>
-                <Plus className="mr-1 h-3 w-3" />
-                Add
-              </Link>
-            </Button>
+            <AddHouseholdMemberDialog householdId={id} />
           </CardHeader>
           <CardContent>
             <Table>

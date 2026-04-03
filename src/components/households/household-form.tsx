@@ -1,10 +1,11 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   householdSchema,
   type HouseholdFormData,
@@ -35,6 +36,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { Purok } from "@/generated/prisma/client"
 import {
   HOUSING_TYPES,
@@ -43,6 +45,19 @@ import {
   TOILET_FACILITIES,
   WATER_SOURCES,
 } from "@/lib/constants"
+
+const HouseholdLocationPicker = dynamic(
+  () =>
+    import("@/components/map/household-location-picker").then((m) => ({
+      default: m.HouseholdLocationPicker,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <Skeleton className="h-[320px] w-full rounded-md border" />
+    ),
+  }
+)
 
 interface Props {
   puroks: Purok[]
@@ -62,9 +77,16 @@ export function HouseholdForm({ puroks, defaultValues, householdId }: Props) {
       streetSitio: "",
       purokId: "",
       is4PsBeneficiary: false,
+      latitude: undefined,
+      longitude: undefined,
       ...defaultValues,
     },
   })
+
+  useEffect(() => {
+    form.register("latitude")
+    form.register("longitude")
+  }, [form])
 
   async function onSubmit(data: HouseholdFormData) {
     setIsSubmitting(true)
@@ -156,53 +178,48 @@ export function HouseholdForm({ puroks, defaultValues, householdId }: Props) {
           </CardContent>
         </Card>
 
-        {/* GPS Coordinates */}
+        {/* GPS — pick on map */}
         <Card>
           <CardHeader>
-            <CardTitle>GPS Coordinates</CardTitle>
+            <CardTitle>Location on map</CardTitle>
             <CardDescription>
-              For map placement (can be set later via the map)
+              Click the map to set GPS coordinates for this household (Barangay
+              Taruc area).
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="latitude"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Latitude</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="9.6215"
-                      {...field}
-                      value={field.value ?? ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <CardContent className="space-y-4">
+            <HouseholdLocationPicker
+              mapInstanceKey={householdId ?? "new"}
+              latitude={form.watch("latitude")}
+              longitude={form.watch("longitude")}
+              onChange={(lat, lng) => {
+                form.setValue("latitude", lat, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+                form.setValue("longitude", lng, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }}
+              onClear={() => {
+                form.setValue("latitude", null, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+                form.setValue("longitude", null, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }}
             />
-            <FormField
-              control={form.control}
-              name="longitude"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Longitude</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="any"
-                      placeholder="125.9589"
-                      {...field}
-                      value={field.value ?? ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {(form.formState.errors.latitude ||
+              form.formState.errors.longitude) && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.latitude?.message ??
+                  form.formState.errors.longitude?.message}
+              </p>
+            )}
           </CardContent>
         </Card>
 
