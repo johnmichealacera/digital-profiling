@@ -27,7 +27,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Loader2, Building2, Landmark } from "lucide-react"
+import { Loader2, Building2, Landmark, MapPin } from "lucide-react"
+import { AddPurokForm } from "@/components/settings/add-purok-form"
 
 type MunicipalityRow = {
   id: string
@@ -407,6 +408,28 @@ export function BarangayManagementClient() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <MapPin className="h-5 w-5" />
+            Add purok
+          </CardTitle>
+          <CardDescription>
+            Add another purok to an existing barangay (each new barangay already
+            gets <span className="font-medium">Purok 1</span>).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AddPurokForm
+            barangayOptions={barangays.map((b) => ({
+              id: b.id,
+              label: `${b.name} — ${b.municipality.name}`,
+            }))}
+            onSuccess={load}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

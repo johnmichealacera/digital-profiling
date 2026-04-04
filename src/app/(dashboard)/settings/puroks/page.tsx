@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { AddPurokForm } from "@/components/settings/add-purok-form"
 
 const ALLOWED = new Set(["SUPER_ADMIN", "CAPTAIN", "SECRETARY"])
 
@@ -41,15 +42,23 @@ export default async function SettingsPuroksPage() {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Super Admin</CardTitle>
+            <CardTitle className="text-lg">Add purok</CardTitle>
             <CardDescription>
-              New barangays get a default <span className="font-medium">Purok 1</span>.
-              To add more puroks for a barangay, use the management tools there
-              when available, or adjust records in the database.
+              New barangays get a default{" "}
+              <span className="font-medium">Purok 1</span>. Add more puroks here
+              or from{" "}
+              <Link
+                href="/settings/barangays"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Barangays & municipalities
+              </Link>
+              .
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild variant="secondary">
+          <CardContent className="space-y-4">
+            <AddPurokForm loadBarangays />
+            <Button asChild variant="outline" size="sm">
               <Link href="/settings/barangays">Open Barangays & municipalities</Link>
             </Button>
           </CardContent>
@@ -75,6 +84,27 @@ export default async function SettingsPuroksPage() {
   const showBarangayColumn =
     session.user.municipalityId != null && !session.user.barangayId
 
+  let addFormOptions: { id: string; label: string }[] = []
+  if (session.user.barangayId) {
+    const brgy = await prisma.barangay.findUnique({
+      where: { id: session.user.barangayId },
+      select: { id: true, name: true },
+    })
+    if (brgy) {
+      addFormOptions = [{ id: brgy.id, label: `Brgy. ${brgy.name}` }]
+    }
+  } else if (tenantIds && tenantIds.length > 0) {
+    const brgys = await prisma.barangay.findMany({
+      where: { id: { in: tenantIds } },
+      include: { municipality: { select: { name: true } } },
+      orderBy: { name: "asc" },
+    })
+    addFormOptions = brgys.map((b) => ({
+      id: b.id,
+      label: `${b.name} — ${b.municipality.name}`,
+    }))
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -87,11 +117,25 @@ export default async function SettingsPuroksPage() {
 
       <Card>
         <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Add purok</CardTitle>
+          <CardDescription>
+            Names must be unique within each barangay. Leave sort order empty
+            to place the new purok after existing ones.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AddPurokForm
+            barangayOptions={addFormOptions}
+            fixedBarangayId={session.user.barangayId}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
           <CardTitle className="text-lg">Your puroks</CardTitle>
           <CardDescription>
-            {puroks.length} purok{puroks.length === 1 ? "" : "s"} · Need another
-            purok? Ask a Super Admin or use barangay setup when your process
-            allows it.
+            {puroks.length} purok{puroks.length === 1 ? "" : "s"} in your scope.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:px-6">
