@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { formatResidentName } from "@/lib/utils"
+import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -10,8 +11,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+
   const households = await prisma.household.findMany({
     where: {
+      ...householdWhereForTenant(tenantIds),
       latitude: { not: null },
       longitude: { not: null },
     },

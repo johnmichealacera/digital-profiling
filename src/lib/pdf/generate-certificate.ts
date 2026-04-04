@@ -5,7 +5,7 @@ import {
   formatDate,
   computeAge,
 } from "@/lib/utils"
-import { CIVIL_STATUS_LABELS, BARANGAY_INFO } from "@/lib/constants"
+import { CIVIL_STATUS_LABELS } from "@/lib/constants"
 import type {
   DocumentRequest,
   Resident,
@@ -14,11 +14,20 @@ import type {
   BarangayOfficial,
 } from "@/generated/prisma/client"
 
+export type CertificateBranding = {
+  barangayName: string
+  municipalityName: string
+  province: string
+  /** e.g. "Barangay Taruc, Socorro, Surigao del Norte" */
+  fullAddressLine: string
+}
+
 interface GenerateParams {
   document: DocumentRequest
   resident: Resident
   household: (Household & { purok: Purok }) | null
   captain: BarangayOfficial | null
+  branding: CertificateBranding
 }
 
 export async function generateCertificatePdf({
@@ -26,6 +35,7 @@ export async function generateCertificatePdf({
   resident,
   household,
   captain,
+  branding,
 }: GenerateParams): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create()
   const page = pdfDoc.addPage(PageSizes.Letter)
@@ -54,11 +64,11 @@ export async function generateCertificatePdf({
 
   drawCentered("Republic of the Philippines", y, 11)
   y -= 16
-  drawCentered(`Province of ${BARANGAY_INFO.province}`, y, 11)
+  drawCentered(`Province of ${branding.province}`, y, 11)
   y -= 16
-  drawCentered(`Municipality of ${BARANGAY_INFO.municipality}`, y, 11)
+  drawCentered(`Municipality of ${branding.municipalityName}`, y, 11)
   y -= 16
-  drawCentered(`BARANGAY ${BARANGAY_INFO.name.toUpperCase()}`, y, 12, fontBold)
+  drawCentered(`BARANGAY ${branding.barangayName.toUpperCase()}`, y, 12, fontBold)
   y -= 14
   drawCentered(`Office of the Punong Barangay`, y, 10, fontItalic)
 
@@ -100,8 +110,8 @@ export async function generateCertificatePdf({
   const age = computeAge(resident.dateOfBirth)
   const civilStatus = CIVIL_STATUS_LABELS[resident.civilStatus] || resident.civilStatus
   const address = household
-    ? `${household.purok.name}, Barangay ${BARANGAY_INFO.name}, ${BARANGAY_INFO.municipality}, ${BARANGAY_INFO.province}`
-    : `Barangay ${BARANGAY_INFO.name}, ${BARANGAY_INFO.municipality}, ${BARANGAY_INFO.province}`
+    ? `${household.purok.name}, Barangay ${branding.barangayName}, ${branding.municipalityName}, ${branding.province}`
+    : `Barangay ${branding.barangayName}, ${branding.municipalityName}, ${branding.province}`
 
   page.drawText("TO WHOM IT MAY CONCERN:", {
     x: leftMargin,
@@ -201,7 +211,7 @@ export async function generateCertificatePdf({
   // ── Date & Validity ───────────────────────────────────────────────────────
   y -= lineHeight
   const today = formatDate(new Date())
-  page.drawText(`       Issued this ${today} at ${BARANGAY_INFO.fullAddress}.`, {
+  page.drawText(`       Issued this ${today} at ${branding.fullAddressLine}.`, {
     x: leftMargin,
     y,
     size: fontSize,

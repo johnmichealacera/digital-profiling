@@ -2,12 +2,25 @@ import { Suspense } from "react"
 import { prisma } from "@/lib/prisma"
 import { HealthRecordsList } from "@/components/health/health-records-list"
 import { Loader2 } from "lucide-react"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import type { Prisma } from "@/generated/prisma/client"
+import { getTenantBarangayIds, residentWhereForTenant } from "@/lib/tenant"
 
 export default async function HealthPage() {
-  // Summary counts by category
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const resFilter = residentWhereForTenant(tenantIds)
+  const hrWhere: Prisma.HealthRecordWhereInput = {
+    isActive: true,
+    ...(Object.keys(resFilter).length > 0
+      ? { resident: { is: resFilter } }
+      : {}),
+  }
+
   const categoryCounts = await prisma.healthRecord.groupBy({
     by: ["category"],
-    where: { isActive: true },
+    where: hrWhere,
     _count: true,
   })
 

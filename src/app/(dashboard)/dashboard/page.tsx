@@ -7,8 +7,28 @@ import { SexRatioChart } from "@/components/dashboard/sex-ratio-chart"
 import { PurokPopulationChart } from "@/components/dashboard/purok-population-chart"
 import { CivilStatusChart } from "@/components/dashboard/civil-status-chart"
 import { DisasterPrepCharts } from "@/components/dashboard/disaster-prep-charts"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import type { Prisma } from "@/generated/prisma/client"
+import {
+  barangayIdFilter,
+  getTenantBarangayIds,
+  householdWhereForTenant,
+  purokWhereForTenant,
+  residentWhereForTenant,
+} from "@/lib/tenant"
 
-async function getDashboardData() {
+async function getDashboardData(tenantIds: string[] | null) {
+  const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
+  const hhWhere = householdWhereForTenant(tenantIds)
+  const purokWhere = purokWhereForTenant(tenantIds)
+  const barangayFilter = barangayIdFilter(tenantIds)
+  const missRes = residentWhereForTenant(tenantIds)
+  const missingWhere: Prisma.MissingPersonReportWhereInput = {
+    foundAt: null,
+    ...(Object.keys(missRes).length > 0 ? { resident: { is: missRes } } : {}),
+  }
+
   const [
     residents,
     households,
@@ -22,7 +42,7 @@ async function getDashboardData() {
     activeDisasterEvent,
   ] = await Promise.all([
     prisma.resident.findMany({
-      where: { status: "ACTIVE" },
+      where: rWhere,
       select: {
         sex: true,
         dateOfBirth: true,
@@ -37,26 +57,46 @@ async function getDashboardData() {
         household: { select: { purokId: true, purok: { select: { name: true } } } },
       },
     }),
-    prisma.household.count(),
-    prisma.purok.findMany({ orderBy: { order: "asc" } }),
-    prisma.documentRequest.count({ where: { status: "PENDING" } }),
+    prisma.household.count({ where: hhWhere }),
+    prisma.purok.findMany({ where: purokWhere, orderBy: { order: "asc" } }),
+    prisma.documentRequest.count({
+      where: {
+        status: "PENDING",
+        ...(barangayFilter ? { barangayId: barangayFilter } : {}),
+      },
+    }),
     prisma.blotter.count({
-      where: { status: { in: ["FILED", "UNDER_MEDIATION"] } },
+      where: {
+        status: { in: ["FILED", "UNDER_MEDIATION"] },
+        ...(barangayFilter ? { barangayId: barangayFilter } : {}),
+      },
     }),
     prisma.householdDisasterProfile.groupBy({
       by: ["riskLevel"],
+      where: { household: { is: hhWhere } },
       _count: true,
     }),
-    prisma.evacuationCenter.count({ where: { isActive: true } }),
-    prisma.missingPersonReport.count({ where: { foundAt: null } }),
+    prisma.evacuationCenter.count({
+      where: {
+        isActive: true,
+        ...(barangayFilter ? { barangayId: barangayFilter } : {}),
+      },
+    }),
+    prisma.missingPersonReport.count({ where: missingWhere }),
     prisma.householdDisasterProfile.findMany({
-      where: { evacuatedAt: { not: null } },
+      where: {
+        evacuatedAt: { not: null },
+        household: { is: hhWhere },
+      },
       include: {
         household: { select: { _count: { select: { residents: true } } } },
       },
     }),
     prisma.disasterEvent.findFirst({
-      where: { status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        ...(barangayFilter ? { barangayId: barangayFilter } : {}),
+      },
       orderBy: { startedAt: "desc" },
       select: { id: true, title: true, type: true },
     }),
@@ -145,7 +185,9 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const stats = await getDashboardData()
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const stats = await getDashboardData(tenantIds)
 
   return (
     <div className="space-y-6">

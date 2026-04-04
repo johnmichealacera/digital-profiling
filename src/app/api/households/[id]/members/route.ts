@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { canPerformAction } from "@/lib/permissions"
 import type { UserRole } from "@/generated/prisma/client"
 import { z } from "zod"
+import { assertHouseholdInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
 const bodySchema = z.object({
   residentId: z.string().min(1),
@@ -25,6 +26,8 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+
   const { id: householdId } = await params
   const body = await req.json()
   const parsed = bodySchema.safeParse(body)
@@ -33,6 +36,10 @@ export async function POST(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     )
+  }
+
+  if (!(await assertHouseholdInTenant(householdId, tenantIds))) {
+    return NextResponse.json({ error: "Household not found" }, { status: 404 })
   }
 
   const household = await prisma.household.findUnique({

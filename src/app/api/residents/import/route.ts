@@ -8,6 +8,7 @@ import {
   parseResidentImportBuffer,
   parseResidentRow,
 } from "@/lib/resident-import"
+import { canAccessBarangayId, getTenantBarangayIds } from "@/lib/tenant"
 
 const MAX_BYTES = 5 * 1024 * 1024
 
@@ -18,6 +19,32 @@ export async function POST(req: NextRequest) {
   }
 
   if (!canPerformAction(session.user.role, "residents", "create")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const tenantIds = await getTenantBarangayIds(session)
+  const paramBarangayId = req.nextUrl.searchParams.get("barangayId")?.trim()
+
+  let importBarangayId: string
+  if (session.user.role === "SUPER_ADMIN") {
+    if (!paramBarangayId) {
+      return NextResponse.json(
+        { error: "Query parameter barangayId is required for import" },
+        { status: 400 }
+      )
+    }
+    importBarangayId = paramBarangayId
+  } else {
+    if (!session.user.barangayId) {
+      return NextResponse.json(
+        { error: "No barangay assignment for this account" },
+        { status: 403 }
+      )
+    }
+    importBarangayId = session.user.barangayId
+  }
+
+  if (!canAccessBarangayId(session, importBarangayId, tenantIds)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -53,11 +80,12 @@ export async function POST(req: NextRequest) {
   }
 
   const households = await prisma.household.findMany({
+    where: { barangayId: importBarangayId },
     include: { purok: true },
   })
   const householdIdByKey = new Map<string, string>()
   for (const h of households) {
-    const key = buildHouseholdLookupKey(h.houseNo, h.purok.name)
+    const key = buildHouseholdLookupKey(h.houseNo, h.purok.name, importBarangayId)
     householdIdByKey.set(key, h.id)
   }
 
@@ -66,7 +94,12 @@ export async function POST(req: NextRequest) {
 
   for (let i = 0; i < rows.length; i++) {
     const rowNumber = i + 2
-    const parsed = parseResidentRow(rows[i]!, rowNumber, householdIdByKey)
+    const parsed = parseResidentRow(
+      rows[i]!,
+      rowNumber,
+      householdIdByKey,
+      importBarangayId
+    )
     if (!parsed.data) {
       errors.push({ row: parsed.rowNumber, messages: parsed.errors })
       continue

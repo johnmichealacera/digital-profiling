@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import type { Prisma } from "@/generated/prisma/client"
+import {
+  barangayIdFilter,
+  getTenantBarangayIds,
+  householdWhereForTenant,
+  residentWhereForTenant,
+} from "@/lib/tenant"
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -9,12 +16,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
+  const hhWhere = householdWhereForTenant(tenantIds)
+  const ecBarangay = barangayIdFilter(tenantIds)
+  const missRes = residentWhereForTenant(tenantIds)
+  const missingReportWhere: Prisma.MissingPersonReportWhereInput = {
+    foundAt: null,
+    ...(Object.keys(missRes).length > 0 ? { resident: { is: missRes } } : {}),
+  }
+
   const { searchParams } = new URL(req.url)
   const type = searchParams.get("type") || "residents"
 
   if (type === "residents") {
     const residents = await prisma.resident.findMany({
-      where: { status: "ACTIVE" },
+      where: rWhere,
       include: { household: { include: { purok: { select: { name: true } } } } },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     })
@@ -64,6 +81,7 @@ export async function GET(req: NextRequest) {
 
   if (type === "households") {
     const households = await prisma.household.findMany({
+      where: hhWhere,
       include: {
         purok: { select: { name: true } },
         _count: { select: { residents: true } },
@@ -104,6 +122,7 @@ export async function GET(req: NextRequest) {
 
   if (type === "disaster-profiles") {
     const profiles = await prisma.householdDisasterProfile.findMany({
+      where: { household: { is: hhWhere } },
       include: {
         household: {
           select: {
@@ -157,7 +176,10 @@ export async function GET(req: NextRequest) {
 
   if (type === "disaster-evacuation-centers") {
     const centers = await prisma.evacuationCenter.findMany({
-      where: { isActive: true },
+      where: {
+        ...(ecBarangay ? { barangayId: ecBarangay } : {}),
+        isActive: true,
+      },
       orderBy: { name: "asc" },
       include: {
         evacuatedProfiles: {
@@ -204,7 +226,7 @@ export async function GET(req: NextRequest) {
 
   if (type === "disaster-missing") {
     const reports = await prisma.missingPersonReport.findMany({
-      where: { foundAt: null },
+      where: missingReportWhere,
       orderBy: { reportedAt: "desc" },
       include: {
         resident: {

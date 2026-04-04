@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -13,19 +14,81 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react"
 
 type ImportError = { row: number; messages: string[] }
 
+type BarangayOption = { id: string; name: string }
+
 export function ResidentImportDialog() {
   const router = useRouter()
+  const { data: session, status: sessionStatus } = useSession()
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [barangays, setBarangays] = useState<BarangayOption[]>([])
+  const [barangaysLoading, setBarangaysLoading] = useState(false)
+  const [selectedBarangayId, setSelectedBarangayId] = useState("")
+
+  const isSuperAdmin = session?.user?.role === "SUPER_ADMIN"
 
   function reset() {
     setFile(null)
+    if (isSuperAdmin) setSelectedBarangayId("")
   }
+
+  useEffect(() => {
+    if (!open || !isSuperAdmin) return
+    let cancelled = false
+    setBarangaysLoading(true)
+    fetch("/api/barangays")
+      .then((res) => res.json())
+      .then(
+        (
+          data:
+            | {
+                id: string
+                name: string
+                municipality?: { name: string } | null
+              }[]
+            | { error?: string }
+        ) => {
+        if (cancelled) return
+        if (Array.isArray(data)) {
+          setBarangays(
+            data.map((row) => ({
+              id: row.id,
+              name: row.municipality?.name
+                ? `${row.municipality.name} — ${row.name}`
+                : row.name,
+            }))
+          )
+        } else {
+          toast.error(data.error || "Could not load barangays")
+          setBarangays([])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error("Could not load barangays")
+          setBarangays([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setBarangaysLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, isSuperAdmin])
 
   async function downloadTemplate() {
     const res = await fetch("/api/residents/import/template")
@@ -49,10 +112,18 @@ export function ResidentImportDialog() {
       toast.error("Choose an Excel file first")
       return
     }
+    if (isSuperAdmin && !selectedBarangayId) {
+      toast.error("Select a barangay for this import")
+      return
+    }
     setSubmitting(true)
     const fd = new FormData()
     fd.set("file", file)
-    const res = await fetch("/api/residents/import", { method: "POST", body: fd })
+    const url =
+      isSuperAdmin && selectedBarangayId
+        ? `/api/residents/import?barangayId=${encodeURIComponent(selectedBarangayId)}`
+        : "/api/residents/import"
+    const res = await fetch(url, { method: "POST", body: fd })
     const data = await res.json().catch(() => ({}))
     setSubmitting(false)
 
@@ -119,6 +190,35 @@ export function ResidentImportDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
+          {isSuperAdmin && (
+            <div className="space-y-2">
+              <Label htmlFor="import-barangay">Barangay</Label>
+              <Select
+                value={selectedBarangayId}
+                onValueChange={setSelectedBarangayId}
+                disabled={submitting || barangaysLoading || sessionStatus !== "authenticated"}
+              >
+                <SelectTrigger id="import-barangay" className="w-full">
+                  <SelectValue
+                    placeholder={
+                      barangaysLoading ? "Loading barangays…" : "Select barangay"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {barangays.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                Imports are scoped to the selected barangay (households and
+                puroks must belong there).
+              </p>
+            </div>
+          )}
           <Button
             type="button"
             variant="secondary"
@@ -151,7 +251,11 @@ export function ResidentImportDialog() {
           <Button
             type="button"
             onClick={handleImport}
-            disabled={submitting || !file}
+            disabled={
+              submitting ||
+              !file ||
+              (isSuperAdmin && (!selectedBarangayId || barangaysLoading))
+            }
           >
             {submitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

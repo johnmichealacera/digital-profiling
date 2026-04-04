@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import type { HealthCategory, Prisma } from "@/generated/prisma/client"
+import { assertResidentInTenant, getTenantBarangayIds, residentWhereForTenant } from "@/lib/tenant"
 import { z } from "zod"
 
 const healthRecordSchema = z.object({
@@ -27,21 +29,39 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+
   const { searchParams } = new URL(req.url)
   const category = searchParams.get("category")
   const search = searchParams.get("search")
   const page = parseInt(searchParams.get("page") || "1")
   const limit = 20
 
-  const where: Record<string, unknown> = { isActive: true }
-  if (category) where.category = category
+  const resFilter = residentWhereForTenant(tenantIds)
+  const residentParts: Prisma.ResidentWhereInput[] = []
+  if (Object.keys(resFilter).length > 0) residentParts.push(resFilter)
   if (search) {
-    where.resident = {
+    residentParts.push({
       OR: [
         { firstName: { contains: search, mode: "insensitive" } },
         { lastName: { contains: search, mode: "insensitive" } },
       ],
-    }
+    })
+  }
+
+  const where: Prisma.HealthRecordWhereInput = {
+    isActive: true,
+    ...(category ? { category: category as HealthCategory } : {}),
+    ...(residentParts.length > 0
+      ? {
+          resident: {
+            is:
+              residentParts.length === 1
+                ? residentParts[0]!
+                : { AND: residentParts },
+          },
+        }
+      : {}),
   }
 
   const [records, total] = await Promise.all([
@@ -76,6 +96,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+
   const body = await req.json()
   const parsed = healthRecordSchema.safeParse(body)
   if (!parsed.success) {
@@ -83,6 +105,10 @@ export async function POST(req: NextRequest) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     )
+  }
+
+  if (!(await assertResidentInTenant(parsed.data.residentId, tenantIds))) {
+    return NextResponse.json({ error: "Resident not found" }, { status: 404 })
   }
 
   const record = await prisma.healthRecord.create({

@@ -9,20 +9,69 @@ const prisma = new PrismaClient({ adapter })
 async function main() {
   console.log("Seeding database...")
 
+  const muni = await prisma.municipality.upsert({
+    where: {
+      name_province: {
+        name: "Socorro",
+        province: "Surigao del Norte",
+      },
+    },
+    create: {
+      name: "Socorro",
+      province: "Surigao del Norte",
+      region: "Caraga Region (Region XIII)",
+    },
+    update: {},
+  })
+
+  const barangay = await prisma.barangay.upsert({
+    where: {
+      municipalityId_name: {
+        municipalityId: muni.id,
+        name: "Taruc",
+      },
+    },
+    create: {
+      name: "Taruc",
+      municipalityId: muni.id,
+      province: "Surigao del Norte",
+      zipCode: "8416",
+      region: "Caraga Region (Region XIII)",
+      mapCenterLat: 9.6215,
+      mapCenterLng: 125.9589,
+      mapDefaultZoom: 15,
+      code: "TRC",
+    },
+    update: {
+      zipCode: "8416",
+      mapCenterLat: 9.6215,
+      mapCenterLng: 125.9589,
+      code: "TRC",
+    },
+  })
+
   // ── Puroks ─────────────────────────────────────────────────────────────────
+  const purokDefs = [
+    { name: "Purok 1", description: "Lower Taruc", order: 1 },
+    { name: "Purok 2", description: "Central Taruc", order: 2 },
+    { name: "Purok 3", description: "Upper Taruc", order: 3 },
+    { name: "Purok 4", description: "Sitio Riverside", order: 4 },
+    { name: "Purok 5", description: "Sitio Hillside", order: 5 },
+    { name: "Purok 6", description: "Sitio Seaside", order: 6 },
+  ]
   const puroks = await Promise.all(
-    [
-      { name: "Purok 1", description: "Lower Taruc", order: 1 },
-      { name: "Purok 2", description: "Central Taruc", order: 2 },
-      { name: "Purok 3", description: "Upper Taruc", order: 3 },
-      { name: "Purok 4", description: "Sitio Riverside", order: 4 },
-      { name: "Purok 5", description: "Sitio Hillside", order: 5 },
-      { name: "Purok 6", description: "Sitio Seaside", order: 6 },
-    ].map((p) =>
+    purokDefs.map((p) =>
       prisma.purok.upsert({
-        where: { name: p.name },
+        where: {
+          barangayId_name: { barangayId: barangay.id, name: p.name },
+        },
         update: {},
-        create: p,
+        create: {
+          name: p.name,
+          description: p.description,
+          order: p.order,
+          barangayId: barangay.id,
+        },
       })
     )
   )
@@ -69,8 +118,8 @@ async function main() {
   for (const staff of staffAccounts) {
     await prisma.user.upsert({
       where: { email: staff.email },
-      update: {},
-      create: { ...staff, password: staffPassword },
+      update: { barangayId: barangay.id },
+      create: { ...staff, password: staffPassword, barangayId: barangay.id },
     })
   }
   console.log(`Created ${staffAccounts.length} staff accounts`)
@@ -94,6 +143,7 @@ async function main() {
     await prisma.barangayOfficial.create({
       data: {
         ...official,
+        barangayId: barangay.id,
         termStart: new Date("2023-06-30"),
         termEnd: new Date("2026-06-30"),
         isIncumbent: true,
@@ -215,7 +265,7 @@ async function main() {
   for (const hh of sampleHouseholds) {
     const { residents: residentData, ...householdData } = hh
     const household = await prisma.household.create({
-      data: householdData,
+      data: { ...householdData, barangayId: barangay.id },
     })
 
     for (const resident of residentData) {
@@ -262,6 +312,7 @@ async function main() {
   // ── Evacuation Centers ─────────────────────────────────────────────────────
   await prisma.evacuationCenter.create({
     data: {
+      barangayId: barangay.id,
       name: "Taruc Elementary School",
       address: "Purok 2, Barangay Taruc, Socorro",
       capacity: 200,
@@ -275,6 +326,7 @@ async function main() {
 
   await prisma.evacuationCenter.create({
     data: {
+      barangayId: barangay.id,
       name: "Barangay Hall - Taruc",
       address: "Purok 1, Barangay Taruc, Socorro",
       capacity: 80,

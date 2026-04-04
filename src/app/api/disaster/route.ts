@@ -2,6 +2,13 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import type { Prisma } from "@/generated/prisma/client"
+import {
+  barangayIdFilter,
+  getTenantBarangayIds,
+  householdWhereForTenant,
+  residentWhereForTenant,
+} from "@/lib/tenant"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -9,8 +16,20 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const ecBarangay = barangayIdFilter(tenantIds)
+  const hhWhere = householdWhereForTenant(tenantIds)
+  const missResFilter = residentWhereForTenant(tenantIds)
+  const missingReportWhere: Prisma.MissingPersonReportWhereInput = {
+    foundAt: null,
+    ...(Object.keys(missResFilter).length > 0
+      ? { resident: { is: missResFilter } }
+      : {}),
+  }
+
   const [profiles, evacuationCentersRaw, riskCounts, missingCount] = await Promise.all([
     prisma.householdDisasterProfile.findMany({
+      where: { household: { is: hhWhere } },
       include: {
         household: {
           select: {
@@ -25,7 +44,10 @@ export async function GET() {
       orderBy: { riskLevel: "asc" },
     }),
     prisma.evacuationCenter.findMany({
-      where: { isActive: true },
+      where: {
+        ...(ecBarangay ? { barangayId: ecBarangay } : {}),
+        isActive: true,
+      },
       orderBy: { name: "asc" },
       include: {
         evacuatedProfiles: {
@@ -38,9 +60,10 @@ export async function GET() {
     }),
     prisma.householdDisasterProfile.groupBy({
       by: ["riskLevel"],
+      where: { household: { is: hhWhere } },
       _count: true,
     }),
-    prisma.missingPersonReport.count({ where: { foundAt: null } }),
+    prisma.missingPersonReport.count({ where: missingReportWhere }),
   ])
 
   const evacuatedProfiles = profiles.filter((p) => p.evacuatedAt != null)

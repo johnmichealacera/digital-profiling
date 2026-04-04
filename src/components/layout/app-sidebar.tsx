@@ -19,6 +19,7 @@ import {
   UserCog,
   Settings,
   Shield,
+  Building2,
 } from "lucide-react"
 import {
   Sidebar,
@@ -185,6 +186,12 @@ const NAVIGATION = [
         name: "User Management",
         href: "/settings/users",
         icon: UserCog,
+        roles: ["SUPER_ADMIN"] as UserRole[],
+      },
+      {
+        name: "Barangays",
+        href: "/settings/barangays",
+        icon: Building2,
         roles: ["SUPER_ADMIN"] as UserRole[],
       },
       {

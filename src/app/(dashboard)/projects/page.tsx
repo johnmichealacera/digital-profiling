@@ -1,8 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { ProjectList } from "@/components/projects/project-list"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 
 export default async function ProjectsPage() {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const bFilter = barangayIdFilter(tenantIds)
+
   const projects = await prisma.project.findMany({
+    where: bFilter ? { barangayId: bFilter } : {},
     orderBy: { createdAt: "desc" },
     include: {
       createdBy: { select: { id: true, name: true } },

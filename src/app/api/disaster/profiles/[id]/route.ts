@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { assertHouseholdInTenant, getTenantBarangayIds } from "@/lib/tenant"
 import { z } from "zod"
 
 const updateSchema = z.object({
@@ -18,6 +19,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
   const body = await req.json()
   const parsed = updateSchema.safeParse(body)
@@ -30,8 +32,13 @@ export async function PATCH(
 
   const profile = await prisma.householdDisasterProfile.findUnique({
     where: { id },
+    select: { id: true, householdId: true },
   })
   if (!profile) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 })
+  }
+
+  if (!(await assertHouseholdInTenant(profile.householdId, tenantIds))) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 })
   }
 

@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma"
 import { householdSchema } from "@/lib/validations/household.schema"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import {
+  assertHouseholdInTenant,
+  assertPurokInTenant,
+  getTenantBarangayIds,
+} from "@/lib/tenant"
 
 export async function GET(
   req: NextRequest,
@@ -13,7 +18,15 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertHouseholdInTenant(id, tenantIds))) {
+    return NextResponse.json(
+      { error: "Household not found" },
+      { status: 404 }
+    )
+  }
 
   const household = await prisma.household.findUnique({
     where: { id },
@@ -46,13 +59,49 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertHouseholdInTenant(id, tenantIds))) {
+    return NextResponse.json(
+      { error: "Household not found" },
+      { status: 404 }
+    )
+  }
+
   const body = await req.json()
   const parsed = householdSchema.safeParse(body)
 
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 }
+    )
+  }
+
+  if (
+    !(await assertPurokInTenant(parsed.data.purokId, tenantIds))
+  ) {
+    return NextResponse.json(
+      { error: "Purok not found or not in your barangay" },
+      { status: 400 }
+    )
+  }
+
+  const existing = await prisma.household.findUnique({
+    where: { id },
+    select: { barangayId: true },
+  })
+  const newPurok = await prisma.purok.findUnique({
+    where: { id: parsed.data.purokId },
+    select: { barangayId: true },
+  })
+  if (!existing || !newPurok || newPurok.barangayId !== existing.barangayId) {
+    return NextResponse.json(
+      {
+        error:
+          "Purok must belong to the same barangay as this household (cross-barangay moves are not supported here).",
+      },
       { status: 400 }
     )
   }

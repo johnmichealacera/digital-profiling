@@ -5,6 +5,9 @@ import Link from "next/link"
 import { DocumentTable } from "@/components/documents/document-table"
 import { DocumentFilters } from "@/components/documents/document-filters"
 import { Prisma } from "@/generated/prisma/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 
 interface Props {
   searchParams: Promise<{
@@ -16,11 +19,17 @@ interface Props {
 }
 
 export default async function DocumentsPage({ searchParams }: Props) {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const bFilter = barangayIdFilter(tenantIds)
+
   const params = await searchParams
   const page = parseInt(params.page || "1")
   const limit = 20
 
-  const where: Prisma.DocumentRequestWhereInput = {}
+  const where: Prisma.DocumentRequestWhereInput = {
+    ...(bFilter ? { barangayId: bFilter } : {}),
+  }
   if (params.status)
     where.status = params.status as Prisma.EnumDocumentStatusFilter["equals"]
   if (params.documentType)

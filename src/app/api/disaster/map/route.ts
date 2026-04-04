@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -9,9 +10,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const ecBarangay = barangayIdFilter(tenantIds)
+
   const [householdsWithProfile, evacuationCentersRaw] = await Promise.all([
     prisma.household.findMany({
       where: {
+        ...householdWhereForTenant(tenantIds),
         latitude: { not: null },
         longitude: { not: null },
         disasterProfile: { isNot: null },
@@ -27,7 +32,12 @@ export async function GET() {
       },
     }),
     prisma.evacuationCenter.findMany({
-      where: { isActive: true, latitude: { not: null }, longitude: { not: null } },
+      where: {
+        ...(ecBarangay ? { barangayId: ecBarangay } : {}),
+        isActive: true,
+        latitude: { not: null },
+        longitude: { not: null },
+      },
       orderBy: { name: "asc" },
       include: {
         evacuatedProfiles: {

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
+import { resolveWriteBarangayId } from "@/lib/resolve-barangay-write"
 
 const budgetYearSchema = z.object({
   year: z.coerce.number().min(2000).max(2100),
@@ -16,7 +18,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const bid = barangayIdFilter(tenantIds)
+
   const budgetYears = await prisma.budgetYear.findMany({
+    where: bid ? { barangayId: bid } : {},
     orderBy: { year: "desc" },
     include: {
       allocations: true,
@@ -24,7 +30,6 @@ export async function GET() {
     },
   })
 
-  // Compute summary per budget year
   const result = await Promise.all(
     budgetYears.map(async (by) => {
       const income = await prisma.budgetTransaction.aggregate({
@@ -68,18 +73,30 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const wr = resolveWriteBarangayId(
+    session,
+    (body as { barangayId?: string }).barangayId
+  )
+  if (!wr.ok) return wr.response
+
   const existing = await prisma.budgetYear.findUnique({
-    where: { year: parsed.data.year },
+    where: {
+      barangayId_year: {
+        barangayId: wr.barangayId,
+        year: parsed.data.year,
+      },
+    },
   })
   if (existing) {
     return NextResponse.json(
-      { error: `Budget year ${parsed.data.year} already exists` },
+      { error: `Budget year ${parsed.data.year} already exists for this barangay` },
       { status: 409 }
     )
   }
 
   const budgetYear = await prisma.budgetYear.create({
     data: {
+      barangayId: wr.barangayId,
       year: parsed.data.year,
       totalBudget: parsed.data.totalBudget,
       status: parsed.data.status,

@@ -1,8 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { BudgetOverview } from "@/components/budget/budget-overview"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 
 export default async function BudgetPage() {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const bFilter = barangayIdFilter(tenantIds)
+
   const budgetYears = await prisma.budgetYear.findMany({
+    where: bFilter ? { barangayId: bFilter } : {},
     orderBy: { year: "desc" },
     include: {
       allocations: true,

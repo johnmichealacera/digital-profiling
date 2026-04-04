@@ -1,10 +1,24 @@
 import { prisma } from "@/lib/prisma"
 import { ResidentForm } from "@/components/residents/resident-form"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import {
+  getTenantBarangayIds,
+  householdWhereForTenant,
+  purokWhereForTenant,
+} from "@/lib/tenant"
 
 export default async function NewResidentPage() {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+
   const [puroks, households] = await Promise.all([
-    prisma.purok.findMany({ orderBy: { order: "asc" } }),
+    prisma.purok.findMany({
+      where: purokWhereForTenant(tenantIds),
+      orderBy: { order: "asc" },
+    }),
     prisma.household.findMany({
+      where: householdWhereForTenant(tenantIds),
       include: { purok: true },
       orderBy: [{ purok: { order: "asc" } }, { houseNo: "asc" }],
     }),

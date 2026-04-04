@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { assertProjectInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
 export async function GET(
   req: NextRequest,
@@ -12,7 +13,13 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertProjectInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
@@ -37,7 +44,13 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertProjectInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 })
+  }
+
   const body = await req.json()
 
   const updateData: Record<string, unknown> = {}

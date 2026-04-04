@@ -3,7 +3,14 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
+import type { Prisma } from "@/generated/prisma/client"
 import { formatResidentName } from "@/lib/utils"
+import {
+  assertDisasterEventInTenant,
+  assertResidentInTenant,
+  getTenantBarangayIds,
+  residentWhereForTenant,
+} from "@/lib/tenant"
 
 const createSchema = z.object({
   residentId: z.string().min(1),
@@ -17,10 +24,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { searchParams } = new URL(req.url)
   const eventId = searchParams.get("eventId")
 
-  const where: { foundAt: null; disasterEventId?: string | null } = { foundAt: null }
+  const resFilter = residentWhereForTenant(tenantIds)
+  const where: Prisma.MissingPersonReportWhereInput = {
+    foundAt: null,
+    ...(Object.keys(resFilter).length > 0
+      ? { resident: { is: resFilter } }
+      : {}),
+  }
   if (eventId !== null && eventId !== undefined && eventId !== "") {
     where.disasterEventId = eventId
   }
@@ -64,6 +78,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+
   const body = await req.json()
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) {
@@ -71,6 +87,17 @@ export async function POST(req: NextRequest) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     )
+  }
+
+  if (!(await assertResidentInTenant(parsed.data.residentId, tenantIds))) {
+    return NextResponse.json({ error: "Resident not found" }, { status: 404 })
+  }
+
+  if (
+    parsed.data.disasterEventId &&
+    !(await assertDisasterEventInTenant(parsed.data.disasterEventId, tenantIds))
+  ) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 })
   }
 
   const resident = await prisma.resident.findUnique({

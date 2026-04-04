@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { assertBudgetYearInTenant, getTenantBarangayIds } from "@/lib/tenant"
 import { z } from "zod"
 
 const transactionSchema = z.object({
@@ -28,7 +29,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertBudgetYearInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Budget year not found" }, { status: 404 })
+  }
+
   const body = await req.json()
   const parsed = transactionSchema.safeParse(body)
 

@@ -163,8 +163,17 @@ model User {
   contactNo String?
   avatarUrl String?
   isActive  Boolean  @default(true)
+
+  /** Barangay staff: scoped to this barangay. Null for SUPER_ADMIN or municipal-only users. */
+  barangayId String?
+  /** If set (and barangayId null), user may view all barangays in this municipality (enforced in app). */
+  municipalityId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  barangay           Barangay?      @relation(fields: [barangayId], references: [id], onDelete: SetNull)
+  municipalityScope Municipality? @relation("UserMunicipalScope", fields: [municipalityId], references: [id], onDelete: SetNull)
 
   accounts         Account[]
   sessions         Session[]
@@ -176,6 +185,8 @@ model User {
   budgetEntries    BudgetTransaction[]
   projectsCreated  Project[]
 
+  @@index([barangayId])
+  @@index([municipalityId])
   @@map("users")
 }
 
@@ -220,19 +231,70 @@ model VerificationToken {
 }
 
 // =============================================================================
-// BARANGAY GEOGRAPHY
+// BARANGAY GEOGRAPHY & TENANCY
 // =============================================================================
+
+model Municipality {
+  id        String   @id @default(cuid())
+  name      String
+  province  String
+  region    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  barangays        Barangay[]
+  municipalUsers   User[]   @relation("UserMunicipalScope")
+
+  @@unique([name, province])
+  @@map("municipalities")
+}
+
+model Barangay {
+  id               String   @id @default(cuid())
+  name             String
+  municipalityId   String
+  province         String
+  zipCode          String?
+  region           String?
+  mapCenterLat     Float?
+  mapCenterLng     Float?
+  mapDefaultZoom   Int      @default(15)
+  /** Short code for document/blotter numbering (e.g. TRC). */
+  code             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  municipality      Municipality       @relation(fields: [municipalityId], references: [id])
+  puroks            Purok[]
+  households        Household[]
+  users             User[]
+  officials         BarangayOfficial[]
+  documentRequests  DocumentRequest[]
+  blotters          Blotter[]
+  budgetYears       BudgetYear[]
+  projects          Project[]
+  disasterEvents    DisasterEvent[]
+  evacuationCenters EvacuationCenter[]
+
+  @@unique([municipalityId, name])
+  @@map("barangays")
+}
 
 model Purok {
   id          String   @id @default(cuid())
-  name        String   @unique
+  barangayId  String
+  name        String
   description String?
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  barangay   Barangay    @relation(fields: [barangayId], references: [id], onDelete: Cascade)
   households Household[]
 
+  @@unique([barangayId, name])
+  @@index([barangayId])
   @@map("puroks")
 }
 
@@ -242,9 +304,11 @@ model Purok {
 
 model Household {
   id           String  @id @default(cuid())
+  barangayId   String
   houseNo      String?
   streetSitio  String?
   purokId      String
+  /** Denormalized labels (sync from Barangay for exports/PDFs). */
   barangay     String  @default("Taruc")
   municipality String  @default("Socorro")
   province     String  @default("Surigao del Norte")
@@ -267,10 +331,12 @@ model Household {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  barangayRef     Barangay                  @relation(fields: [barangayId], references: [id])
   purok           Purok                     @relation(fields: [purokId], references: [id])
   residents       Resident[]
   disasterProfile HouseholdDisasterProfile?
 
+  @@index([barangayId])
   @@map("households")
 }
 
@@ -362,11 +428,12 @@ model Resident {
 // =============================================================================
 
 model BarangayOfficial {
-  id         String  @id @default(cuid())
-  firstName  String
-  middleName String?
-  lastName   String
-  suffix     String?
+  id          String  @id @default(cuid())
+  barangayId  String
+  firstName   String
+  middleName  String?
+  lastName    String
+  suffix      String?
 
   position    String
   committee   String?
@@ -381,6 +448,9 @@ model BarangayOfficial {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  barangay Barangay @relation(fields: [barangayId], references: [id], onDelete: Cascade)
+
+  @@index([barangayId])
   @@map("barangay_officials")
 }
 
@@ -390,7 +460,8 @@ model BarangayOfficial {
 
 model DocumentRequest {
   id           String       @id @default(cuid())
-  controlNo    String       @unique
+  barangayId   String
+  controlNo    String
   residentId   String
   documentType DocumentType
   purpose      String
@@ -416,11 +487,14 @@ model DocumentRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  barangay  Barangay @relation(fields: [barangayId], references: [id])
   resident  Resident @relation(fields: [residentId], references: [id])
   encodedBy User?    @relation("EncodedBy", fields: [encodedById], references: [id])
   issuedBy  User?    @relation("IssuedBy", fields: [issuedById], references: [id])
 
+  @@unique([barangayId, controlNo])
   @@index([residentId])
+  @@index([barangayId])
   @@index([documentType])
   @@index([status])
   @@index([createdAt])
@@ -433,7 +507,8 @@ model DocumentRequest {
 
 model Blotter {
   id            String        @id @default(cuid())
-  blotterNo     String        @unique
+  barangayId    String
+  blotterNo     String
   incidentDate  DateTime
   incidentPlace String
   nature        BlotterNature
@@ -458,12 +533,15 @@ model Blotter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  barangay    Barangay         @relation(fields: [barangayId], references: [id])
   complainant Resident?        @relation("Complainant", fields: [complainantId], references: [id])
   respondent  Resident?        @relation("Respondent", fields: [respondentId], references: [id])
   filedBy     User?            @relation("FiledBy", fields: [filedById], references: [id])
   resolvedBy  User?            @relation("ResolvedBy", fields: [resolvedById], references: [id])
   hearings    BlotterHearing[]
 
+  @@unique([barangayId, blotterNo])
+  @@index([barangayId])
   @@index([blotterNo])
   @@index([status])
   @@index([incidentDate])
@@ -490,16 +568,20 @@ model BlotterHearing {
 
 model BudgetYear {
   id          String   @id @default(cuid())
-  year        Int      @unique
+  barangayId  String
+  year        Int
   totalBudget Decimal  @db.Decimal(15, 2)
   status      String   @default("ACTIVE")
   approvedAt  DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  barangay     Barangay            @relation(fields: [barangayId], references: [id], onDelete: Cascade)
   allocations  BudgetAllocation[]
   transactions BudgetTransaction[]
 
+  @@unique([barangayId, year])
+  @@index([barangayId])
   @@map("budget_years")
 }
 
@@ -546,6 +628,7 @@ model BudgetTransaction {
 
 model Project {
   id          String        @id @default(cuid())
+  barangayId  String
   title       String
   description String?
   category    String
@@ -568,9 +651,11 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  barangay  Barangay        @relation(fields: [barangayId], references: [id], onDelete: Cascade)
   createdBy User?           @relation(fields: [createdById], references: [id])
   updates   ProjectUpdate[]
 
+  @@index([barangayId])
   @@map("projects")
 }
 
@@ -650,6 +735,7 @@ model HealthRecord {
 
 model DisasterEvent {
   id         String               @id @default(cuid())
+  barangayId String
   title      String
   type       String?              // e.g. typhoon, flood, earthquake
   status     DisasterEventStatus
@@ -659,8 +745,10 @@ model DisasterEvent {
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
+  barangay       Barangay              @relation(fields: [barangayId], references: [id], onDelete: Cascade)
   missingReports MissingPersonReport[]
 
+  @@index([barangayId])
   @@index([status])
   @@map("disaster_events")
 }
@@ -699,6 +787,7 @@ model HouseholdDisasterProfile {
 
 model EvacuationCenter {
   id         String   @id @default(cuid())
+  barangayId String
   name       String
   address    String
   capacity   Int?
@@ -710,8 +799,10 @@ model EvacuationCenter {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  barangay          Barangay                   @relation(fields: [barangayId], references: [id], onDelete: Cascade)
   evacuatedProfiles HouseholdDisasterProfile[]
 
+  @@index([barangayId])
   @@map("evacuation_centers")
 }
 

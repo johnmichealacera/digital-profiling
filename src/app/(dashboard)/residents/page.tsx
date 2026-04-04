@@ -10,6 +10,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { canPerformAction } from "@/lib/permissions"
 import { serializeResidentsForClient } from "@/lib/serialize-resident"
+import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
 
 interface Props {
   searchParams: Promise<{
@@ -28,6 +29,8 @@ export default async function ResidentsPage({ searchParams }: Props) {
   const canImportResidents =
     session?.user?.role != null &&
     canPerformAction(session.user.role, "residents", "create")
+
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
 
   const params = await searchParams
   const page = parseInt(params.page || "1")
@@ -48,11 +51,29 @@ export default async function ResidentsPage({ searchParams }: Props) {
     ]
   }
 
-  if (purokId) where.household = { purokId }
+  const hhScoped = householdWhereForTenant(tenantIds)
+  if (tenantIds !== null) {
+    where.household = {
+      is: {
+        ...hhScoped,
+        ...(purokId ? { purokId } : {}),
+      },
+    }
+  } else if (purokId) {
+    where.household = { purokId }
+  }
+
   if (sex) where.sex = sex as Prisma.EnumSexFilter["equals"]
   if (params.isSeniorCitizen === "true") where.isSeniorCitizen = true
   if (params.isPwd === "true") where.isPwd = true
   if (params.is4PsBeneficiary === "true") where.is4PsBeneficiary = true
+
+  const purokWhere =
+    tenantIds === null
+      ? {}
+      : tenantIds.length === 1
+        ? { barangayId: tenantIds[0]! }
+        : { barangayId: { in: tenantIds } }
 
   const [residents, total, puroks] = await Promise.all([
     prisma.resident.findMany({
@@ -65,7 +86,10 @@ export default async function ResidentsPage({ searchParams }: Props) {
       },
     }),
     prisma.resident.count({ where }),
-    prisma.purok.findMany({ orderBy: { order: "asc" } }),
+    prisma.purok.findMany({
+      where: purokWhere,
+      orderBy: { order: "asc" },
+    }),
   ])
 
   const totalPages = Math.ceil(total / limit)

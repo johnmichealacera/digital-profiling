@@ -5,6 +5,9 @@ import Link from "next/link"
 import { BlotterTable } from "@/components/blotter/blotter-table"
 import { BlotterFilters } from "@/components/blotter/blotter-filters"
 import { Prisma } from "@/generated/prisma/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 
 interface Props {
   searchParams: Promise<{
@@ -15,11 +18,17 @@ interface Props {
 }
 
 export default async function BlotterPage({ searchParams }: Props) {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const bFilter = barangayIdFilter(tenantIds)
+
   const params = await searchParams
   const page = parseInt(params.page || "1")
   const limit = 20
 
-  const where: Prisma.BlotterWhereInput = {}
+  const where: Prisma.BlotterWhereInput = {
+    ...(bFilter ? { barangayId: bFilter } : {}),
+  }
   if (params.status)
     where.status = params.status as Prisma.EnumBlotterStatusFilter["equals"]
   if (params.search) {

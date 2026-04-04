@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { z } from "zod"
-import type { ProjectStatus } from "@/generated/prisma/client"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
+import { resolveWriteBarangayId } from "@/lib/resolve-barangay-write"
 
 const projectSchema = z.object({
   title: z.string().min(1),
@@ -25,10 +26,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const bid = barangayIdFilter(tenantIds)
+
   const { searchParams } = new URL(req.url)
   const status = searchParams.get("status")
 
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = {
+    ...(bid ? { barangayId: bid } : {}),
+  }
   if (status) where.status = status
 
   const projects = await prisma.project.findMany({
@@ -58,9 +64,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const wr = resolveWriteBarangayId(
+    session,
+    (body as { barangayId?: string }).barangayId
+  )
+  if (!wr.ok) return wr.response
+
   const project = await prisma.project.create({
     data: {
       ...parsed.data,
+      barangayId: wr.barangayId,
       startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
       targetEndDate: parsed.data.targetEndDate ? new Date(parsed.data.targetEndDate) : null,
       createdById: session.user.id,

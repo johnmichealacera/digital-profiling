@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveWriteBarangayId } from "@/lib/resolve-barangay-write"
 import { z } from "zod"
 
 const evacuationSchema = z.object({
@@ -12,6 +13,7 @@ const evacuationSchema = z.object({
   longitude: z.coerce.number().optional().nullable(),
   contactNo: z.string().optional().nullable(),
   facilities: z.array(z.string()).default([]),
+  barangayId: z.string().optional().nullable(),
 })
 
 export async function POST(req: NextRequest) {
@@ -29,8 +31,13 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const wr = resolveWriteBarangayId(session, parsed.data.barangayId)
+  if (!wr.ok) return wr.response
+
+  const { barangayId: _fromBody, ...fields } = parsed.data
+  void _fromBody
   const center = await prisma.evacuationCenter.create({
-    data: parsed.data,
+    data: { ...fields, barangayId: wr.barangayId },
   })
 
   return NextResponse.json(center, { status: 201 })

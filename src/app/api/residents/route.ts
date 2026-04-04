@@ -4,12 +4,16 @@ import { residentSchema } from "@/lib/validations/resident.schema"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Prisma } from "@/generated/prisma/client"
+import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
+import { canPerformAction } from "@/lib/permissions"
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const tenantIds = await getTenantBarangayIds(session)
 
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get("page") || "1")
@@ -35,7 +39,15 @@ export async function GET(req: NextRequest) {
     ]
   }
 
-  if (purokId) {
+  const hhScoped = householdWhereForTenant(tenantIds)
+  if (tenantIds !== null) {
+    where.household = {
+      is: {
+        ...hhScoped,
+        ...(purokId ? { purokId } : {}),
+      },
+    }
+  } else if (purokId) {
     where.household = { purokId }
   }
 
@@ -83,6 +95,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  if (!canPerformAction(session.user.role, "residents", "create")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const body = await req.json()
   const parsed = residentSchema.safeParse(body)
 
@@ -91,6 +107,24 @@ export async function POST(req: NextRequest) {
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 400 }
     )
+  }
+
+  const tenantIds = await getTenantBarangayIds(session)
+  const householdId = parsed.data.householdId
+  if (householdId) {
+    const hh = await prisma.household.findUnique({
+      where: { id: householdId },
+      select: { barangayId: true },
+    })
+    if (
+      !hh ||
+      (tenantIds !== null && !tenantIds.includes(hh.barangayId))
+    ) {
+      return NextResponse.json(
+        { error: "Household not found or not in your barangay" },
+        { status: 400 }
+      )
+    }
   }
 
   const { dateOfBirth, monthlyIncome, emailAddress, ...rest } = parsed.data

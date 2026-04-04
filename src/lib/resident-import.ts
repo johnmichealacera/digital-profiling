@@ -219,17 +219,20 @@ export function sheetRowsToObjects(
 
 export function buildHouseholdLookupKey(
   houseNo: string | null | undefined,
-  purokName: string | null | undefined
+  purokName: string | null | undefined,
+  barangayId: string
 ): string {
+  const b = barangayId.trim().toLowerCase()
   const h = (houseNo ?? "").trim().toLowerCase()
   const p = (purokName ?? "").trim().toLowerCase()
-  return `${h}|${p}`
+  return `${b}|${h}|${p}`
 }
 
 export function parseResidentRow(
   row: Record<string, unknown>,
   rowNumber: number,
-  householdIdByKey: Map<string, string>
+  householdIdByKey: Map<string, string>,
+  importBarangayId: string
 ): ParsedImportRow {
   const errors: string[] = []
 
@@ -275,7 +278,7 @@ export function parseResidentRow(
         "household_house_no and household_purok_name must both be set to assign a household, or both left empty"
       )
     } else {
-      const key = buildHouseholdLookupKey(hhNo, purokName)
+      const key = buildHouseholdLookupKey(hhNo, purokName, importBarangayId)
       const id = householdIdByKey.get(key)
       if (!id)
         errors.push(

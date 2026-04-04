@@ -9,6 +9,8 @@ declare module "next-auth" {
   interface User {
     role: UserRole
     position?: string | null
+    barangayId?: string | null
+    municipalityId?: string | null
   }
   interface Session {
     user: {
@@ -17,6 +19,8 @@ declare module "next-auth" {
       name: string
       role: UserRole
       position?: string | null
+      barangayId?: string | null
+      municipalityId?: string | null
     }
   }
 }
@@ -26,6 +30,8 @@ declare module "next-auth/jwt" {
     id: string
     role: UserRole
     position?: string | null
+    barangayId?: string | null
+    municipalityId?: string | null
   }
 }
 
@@ -69,6 +75,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           position: user.position,
+          barangayId: user.barangayId,
+          municipalityId: user.municipalityId,
         }
       },
     }),
@@ -79,6 +87,8 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role
         token.position = user.position
+        token.barangayId = user.barangayId
+        token.municipalityId = user.municipalityId
       }
       return token
     },
@@ -87,6 +97,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id
         session.user.role = token.role
         session.user.position = token.position
+        session.user.barangayId = token.barangayId
+        session.user.municipalityId = token.municipalityId
       }
       return session
     },

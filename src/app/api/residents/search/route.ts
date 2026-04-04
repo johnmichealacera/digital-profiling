@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const tenantIds = await getTenantBarangayIds(session)
 
   const { searchParams } = new URL(req.url)
   const q = searchParams.get("q") || ""
@@ -16,6 +19,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([])
   }
 
+  const hh = householdWhereForTenant(tenantIds)
+
   const residents = await prisma.resident.findMany({
     where: {
       status: "ACTIVE",
@@ -23,6 +28,9 @@ export async function GET(req: NextRequest) {
         { firstName: { contains: q, mode: "insensitive" } },
         { lastName: { contains: q, mode: "insensitive" } },
       ],
+      ...(tenantIds === null
+        ? {}
+        : { household: { is: hh } }),
     },
     take: 10,
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],

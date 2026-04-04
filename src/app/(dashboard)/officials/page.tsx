@@ -1,8 +1,16 @@
 import { prisma } from "@/lib/prisma"
 import { OfficialsDirectory } from "@/components/officials/officials-directory"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 
 export default async function OfficialsPage() {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+  const bFilter = barangayIdFilter(tenantIds)
+
   const officials = await prisma.barangayOfficial.findMany({
+    where: bFilter ? { barangayId: bFilter } : {},
     orderBy: [{ isIncumbent: "desc" }, { position: "asc" }, { lastName: "asc" }],
   })
 

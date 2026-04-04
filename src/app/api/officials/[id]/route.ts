@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { assertOfficialInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
 export async function PUT(
   req: NextRequest,
@@ -12,7 +13,13 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertOfficialInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Official not found" }, { status: 404 })
+  }
+
   const body = await req.json()
 
   const updateData: Record<string, unknown> = {}
@@ -43,7 +50,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertOfficialInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Official not found" }, { status: 404 })
+  }
+
   await prisma.barangayOfficial.delete({ where: { id } })
 
   return NextResponse.json({ success: true })

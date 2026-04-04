@@ -4,19 +4,27 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { HouseholdList } from "@/components/households/household-list"
 import { Prisma } from "@/generated/prisma/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { getTenantBarangayIds, householdWhereForTenant, purokWhereForTenant } from "@/lib/tenant"
 
 interface Props {
   searchParams: Promise<{ page?: string; purokId?: string; search?: string }>
 }
 
 export default async function HouseholdsPage({ searchParams }: Props) {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
+
   const params = await searchParams
   const page = parseInt(params.page || "1")
   const limit = 20
   const purokId = params.purokId || ""
   const search = params.search || ""
 
-  const where: Prisma.HouseholdWhereInput = {}
+  const where: Prisma.HouseholdWhereInput = {
+    ...householdWhereForTenant(tenantIds),
+  }
   if (purokId) where.purokId = purokId
   if (search) {
     where.OR = [
@@ -48,7 +56,10 @@ export default async function HouseholdsPage({ searchParams }: Props) {
       },
     }),
     prisma.household.count({ where }),
-    prisma.purok.findMany({ orderBy: { order: "asc" } }),
+    prisma.purok.findMany({
+      where: purokWhereForTenant(tenantIds),
+      orderBy: { order: "asc" },
+    }),
   ])
 
   const totalPages = Math.ceil(total / limit)

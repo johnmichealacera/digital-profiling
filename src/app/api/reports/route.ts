@@ -2,12 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import type { Prisma } from "@/generated/prisma/client"
+import {
+  barangayIdFilter,
+  getTenantBarangayIds,
+  householdWhereForTenant,
+  residentWhereForTenant,
+} from "@/lib/tenant"
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const tenantIds = await getTenantBarangayIds(session)
+  const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
+  const hhWhere = householdWhereForTenant(tenantIds)
+  const ecBarangay = barangayIdFilter(tenantIds)
 
   const { searchParams } = new URL(req.url)
   const type = searchParams.get("type") || "population"
@@ -27,23 +39,23 @@ export async function GET(req: NextRequest) {
       fourPs,
       minors,
     ] = await Promise.all([
-      prisma.resident.count({ where: { status: "ACTIVE" } }),
-      prisma.resident.groupBy({ by: ["sex"], where: { status: "ACTIVE" }, _count: true }),
-      prisma.resident.groupBy({ by: ["civilStatus"], where: { status: "ACTIVE" }, _count: true }),
+      prisma.resident.count({ where: rWhere }),
+      prisma.resident.groupBy({ by: ["sex"], where: rWhere, _count: true }),
+      prisma.resident.groupBy({ by: ["civilStatus"], where: rWhere, _count: true }),
       prisma.resident.findMany({
-        where: { status: "ACTIVE" },
+        where: rWhere,
         select: { household: { select: { purok: { select: { name: true } } } } },
       }),
-      prisma.resident.groupBy({ by: ["educationalAttainment"], where: { status: "ACTIVE" }, _count: true }),
-      prisma.resident.groupBy({ by: ["employmentStatus"], where: { status: "ACTIVE" }, _count: true }),
-      prisma.resident.count({ where: { status: "ACTIVE", voterStatus: true } }),
-      prisma.resident.count({ where: { status: "ACTIVE", isSeniorCitizen: true } }),
-      prisma.resident.count({ where: { status: "ACTIVE", isPwd: true } }),
-      prisma.resident.count({ where: { status: "ACTIVE", isSoloParent: true } }),
-      prisma.resident.count({ where: { status: "ACTIVE", is4PsBeneficiary: true } }),
+      prisma.resident.groupBy({ by: ["educationalAttainment"], where: rWhere, _count: true }),
+      prisma.resident.groupBy({ by: ["employmentStatus"], where: rWhere, _count: true }),
+      prisma.resident.count({ where: { ...rWhere, voterStatus: true } }),
+      prisma.resident.count({ where: { ...rWhere, isSeniorCitizen: true } }),
+      prisma.resident.count({ where: { ...rWhere, isPwd: true } }),
+      prisma.resident.count({ where: { ...rWhere, isSoloParent: true } }),
+      prisma.resident.count({ where: { ...rWhere, is4PsBeneficiary: true } }),
       prisma.resident.count({
         where: {
-          status: "ACTIVE",
+          ...rWhere,
           dateOfBirth: { gt: new Date(new Date().getFullYear() - 18, new Date().getMonth(), new Date().getDate()) },
         },
       }),
@@ -78,11 +90,12 @@ export async function GET(req: NextRequest) {
 
   if (type === "households") {
     const [total, byPurok, fourPsHouseholds] = await Promise.all([
-      prisma.household.count(),
+      prisma.household.count({ where: hhWhere }),
       prisma.household.findMany({
+        where: hhWhere,
         select: { purok: { select: { name: true } }, _count: { select: { residents: true } } },
       }),
-      prisma.household.count({ where: { is4PsBeneficiary: true } }),
+      prisma.household.count({ where: { ...hhWhere, is4PsBeneficiary: true } }),
     ])
 
     const purokData: Record<string, { count: number; members: number }> = {}
@@ -102,9 +115,18 @@ export async function GET(req: NextRequest) {
   }
 
   if (type === "disaster") {
+    const missResFilter = residentWhereForTenant(tenantIds)
+    const missingReportWhere: Prisma.MissingPersonReportWhereInput = {
+      foundAt: null,
+      ...(Object.keys(missResFilter).length > 0
+        ? { resident: { is: missResFilter } }
+        : {}),
+    }
+
     const [profiles, evacuationCentersRaw, riskCounts, missingCount, missingList] =
       await Promise.all([
         prisma.householdDisasterProfile.findMany({
+          where: { household: { is: hhWhere } },
           include: {
             household: {
               select: {
@@ -119,7 +141,10 @@ export async function GET(req: NextRequest) {
           orderBy: { riskLevel: "asc" },
         }),
         prisma.evacuationCenter.findMany({
-          where: { isActive: true },
+          where: {
+            ...(ecBarangay ? { barangayId: ecBarangay } : {}),
+            isActive: true,
+          },
           orderBy: { name: "asc" },
           include: {
             evacuatedProfiles: {
@@ -132,11 +157,12 @@ export async function GET(req: NextRequest) {
         }),
         prisma.householdDisasterProfile.groupBy({
           by: ["riskLevel"],
+          where: { household: { is: hhWhere } },
           _count: true,
         }),
-        prisma.missingPersonReport.count({ where: { foundAt: null } }),
+        prisma.missingPersonReport.count({ where: missingReportWhere }),
         prisma.missingPersonReport.findMany({
-          where: { foundAt: null },
+          where: missingReportWhere,
           orderBy: { reportedAt: "desc" },
           include: {
             resident: {

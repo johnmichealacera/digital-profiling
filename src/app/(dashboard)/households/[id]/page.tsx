@@ -21,13 +21,22 @@ import { ArrowLeft, Edit, Eye, MapPin } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
 import { SEX_LABELS, CIVIL_STATUS_LABELS } from "@/lib/constants"
 import { AddHouseholdMemberDialog } from "@/components/households/add-household-member-dialog"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { assertHouseholdInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
 export default async function HouseholdDetailPage({ params }: Props) {
+  const session = await getServerSession(authOptions)
+  const tenantIds = session ? await getTenantBarangayIds(session) : []
   const { id } = await params
+
+  if (!(await assertHouseholdInTenant(id, tenantIds))) {
+    notFound()
+  }
 
   const household = await prisma.household.findUnique({
     where: { id },

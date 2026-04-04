@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { resolveWriteBarangayId } from "@/lib/resolve-barangay-write"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 import { z } from "zod"
 
 const createSchema = z.object({
@@ -10,6 +12,7 @@ const createSchema = z.object({
   status: z.enum(["ACTIVE", "STANDDOWN", "DRILL", "ENDED"]).default("ACTIVE"),
   startedAt: z.string().min(1),
   notes: z.string().optional().nullable(),
+  barangayId: z.string().optional().nullable(),
 })
 
 export async function GET(req: NextRequest) {
@@ -18,12 +21,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { searchParams } = new URL(req.url)
   const status = searchParams.get("status")
 
-  const where = status
-    ? { status: status as "ACTIVE" | "STANDDOWN" | "DRILL" | "ENDED" }
-    : undefined
+  const bFilter = barangayIdFilter(tenantIds)
+  const where = {
+    ...(status
+      ? { status: status as "ACTIVE" | "STANDDOWN" | "DRILL" | "ENDED" }
+      : {}),
+    ...(bFilter ? { barangayId: bFilter } : {}),
+  }
 
   const events = await prisma.disasterEvent.findMany({
     where,
@@ -71,10 +79,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const wr = resolveWriteBarangayId(session, parsed.data.barangayId)
+  if (!wr.ok) return wr.response
+
   const startedAt = new Date(parsed.data.startedAt)
 
   const event = await prisma.disasterEvent.create({
     data: {
+      barangayId: wr.barangayId,
       title: parsed.data.title,
       type: parsed.data.type ?? null,
       status: parsed.data.status,

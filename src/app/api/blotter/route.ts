@@ -5,6 +5,22 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateControlNo } from "@/lib/utils"
 import { Prisma } from "@/generated/prisma/client"
+import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
+
+async function barangayIdFromParty(
+  complainantId: string | null | undefined,
+  respondentId: string | null | undefined
+): Promise<string | null> {
+  for (const rid of [complainantId, respondentId]) {
+    if (!rid) continue
+    const r = await prisma.resident.findUnique({
+      where: { id: rid },
+      select: { household: { select: { barangayId: true } } },
+    })
+    if (r?.household?.barangayId) return r.household.barangayId
+  }
+  return null
+}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -12,13 +28,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
+  const bid = barangayIdFilter(tenantIds)
+
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get("page") || "1")
   const limit = parseInt(searchParams.get("limit") || "20")
   const status = searchParams.get("status") || ""
   const search = searchParams.get("search") || ""
 
-  const where: Prisma.BlotterWhereInput = {}
+  const where: Prisma.BlotterWhereInput = {
+    ...(bid ? { barangayId: bid } : {}),
+  }
   if (status) where.status = status as Prisma.EnumBlotterStatusFilter["equals"]
   if (search) {
     where.OR = [
@@ -60,6 +81,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const body = await req.json()
   const parsed = blotterSchema.safeParse(body)
 
@@ -70,8 +92,38 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  let barangayId =
+    (await barangayIdFromParty(
+      parsed.data.complainantId,
+      parsed.data.respondentId
+    )) ?? null
+
+  const rawBarangay = (body as { barangayId?: string }).barangayId?.trim()
+  if (!barangayId) {
+    if (session.user.role === "SUPER_ADMIN" && rawBarangay) {
+      barangayId = rawBarangay
+    } else if (session.user.barangayId) {
+      barangayId = session.user.barangayId
+    }
+  }
+
+  if (!barangayId) {
+    return NextResponse.json(
+      {
+        error:
+          "Could not determine barangay (link a complainant/respondent resident, or pass barangayId as super admin).",
+      },
+      { status: 400 }
+    )
+  }
+
+  if (tenantIds !== null && !tenantIds.includes(barangayId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const count = await prisma.blotter.count({
     where: {
+      barangayId,
       createdAt: { gte: new Date(new Date().getFullYear(), 0, 1) },
     },
   })
@@ -82,6 +134,7 @@ export async function POST(req: NextRequest) {
   const blotter = await prisma.blotter.create({
     data: {
       ...rest,
+      barangayId,
       blotterNo,
       incidentDate: new Date(incidentDate),
       filedById: session.user.id,

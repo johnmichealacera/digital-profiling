@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { assertBlotterInTenant, getTenantBarangayIds } from "@/lib/tenant"
 import { z } from "zod"
 
 const hearingSchema = z.object({
@@ -20,7 +21,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertBlotterInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Blotter not found" }, { status: 404 })
+  }
+
   const body = await req.json()
   const parsed = hearingSchema.safeParse(body)
 
