@@ -18,6 +18,8 @@ import {
   purokWhereForTenant,
   residentWhereForTenant,
 } from "@/lib/tenant"
+import { sortOfficialsForScope } from "@/lib/official-rank"
+import { DashboardLeadership } from "@/components/dashboard/dashboard-leadership"
 
 async function getDashboardData(tenantIds: string[] | null) {
   const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
@@ -41,6 +43,7 @@ async function getDashboardData(tenantIds: string[] | null) {
     missingCount,
     evacuatedProfiles,
     activeDisasterEvent,
+    leadershipRaw,
   ] = await Promise.all([
     prisma.resident.findMany({
       where: rWhere,
@@ -101,6 +104,21 @@ async function getDashboardData(tenantIds: string[] | null) {
       orderBy: { startedAt: "desc" },
       select: { id: true, title: true, type: true },
     }),
+    prisma.barangayOfficial.findMany({
+      where: {
+        isIncumbent: true,
+        ...(barangayFilter ? { barangayId: barangayFilter } : {}),
+      },
+      include: {
+        barangay: {
+          select: {
+            name: true,
+            municipality: { select: { name: true, province: true } },
+          },
+        },
+      },
+      orderBy: [{ lastName: "asc" }],
+    }),
   ])
 
   const maleCount = residents.filter((r) => r.sex === "MALE").length
@@ -155,6 +173,8 @@ async function getDashboardData(tenantIds: string[] | null) {
     0
   )
 
+  const officialsLeadership = sortOfficialsForScope(leadershipRaw)
+
   return {
     totalPopulation: residents.length,
     totalHouseholds: households,
@@ -182,6 +202,7 @@ async function getDashboardData(tenantIds: string[] | null) {
           type: activeDisasterEvent.type,
         }
       : null,
+    officialsLeadership,
   }
 }
 
@@ -201,6 +222,14 @@ export default async function DashboardPage() {
       </div>
 
       <DashboardStatCards stats={stats} />
+
+      <DashboardLeadership
+        officials={JSON.parse(JSON.stringify(stats.officialsLeadership))}
+        showBarangay={
+          session?.user?.role === "SUPER_ADMIN" ||
+          (Array.isArray(tenantIds) && tenantIds.length > 1)
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         <AgeDistributionChart data={stats.ageBrackets} />

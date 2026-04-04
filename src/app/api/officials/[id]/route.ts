@@ -25,10 +25,18 @@ export async function PUT(
   const updateData: Record<string, unknown> = {}
   const fields = [
     "firstName", "middleName", "lastName", "suffix",
-    "position", "committee", "contactNo", "isIncumbent",
+    "position", "committee", "contactNo", "isIncumbent", "photoUrl",
   ]
   for (const f of fields) {
-    if (body[f] !== undefined) updateData[f] = body[f]
+    if (body[f] !== undefined) {
+      if (f === "photoUrl") {
+        const u = body[f]
+        updateData[f] =
+          typeof u === "string" && u.trim() !== "" ? u.trim() : null
+      } else {
+        updateData[f] = body[f]
+      }
+    }
   }
   if (body.termStart) updateData.termStart = new Date(body.termStart)
   if (body.termEnd) updateData.termEnd = new Date(body.termEnd)

@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { z } from "zod"
 import { barangayIdFilter, getTenantBarangayIds } from "@/lib/tenant"
 import { resolveWriteBarangayId } from "@/lib/resolve-barangay-write"
+import { sortOfficialsForScope } from "@/lib/official-rank"
 
 const officialSchema = z.object({
   firstName: z.string().min(1),
@@ -17,6 +18,7 @@ const officialSchema = z.object({
   termEnd: z.string().min(1),
   isIncumbent: z.boolean().default(true),
   contactNo: z.string().optional().nullable(),
+  photoUrl: z.string().max(2048).optional().nullable(),
 })
 
 export async function GET() {
@@ -28,10 +30,17 @@ export async function GET() {
   const tenantIds = await getTenantBarangayIds(session)
   const bid = barangayIdFilter(tenantIds)
 
-  const officials = await prisma.barangayOfficial.findMany({
+  const rows = await prisma.barangayOfficial.findMany({
     where: bid ? { barangayId: bid } : {},
-    orderBy: [{ isIncumbent: "desc" }, { position: "asc" }, { lastName: "asc" }],
+    include: {
+      barangay: {
+        select: { name: true },
+      },
+    },
+    orderBy: [{ isIncumbent: "desc" }, { lastName: "asc" }],
   })
+
+  const officials = sortOfficialsForScope(rows)
 
   return NextResponse.json(officials)
 }
@@ -58,12 +67,14 @@ export async function POST(req: NextRequest) {
   )
   if (!wr.ok) return wr.response
 
+  const { photoUrl, ...rest } = parsed.data
   const official = await prisma.barangayOfficial.create({
     data: {
-      ...parsed.data,
+      ...rest,
       barangayId: wr.barangayId,
       termStart: new Date(parsed.data.termStart),
       termEnd: new Date(parsed.data.termEnd),
+      photoUrl: photoUrl?.trim() || null,
     },
   })
 
