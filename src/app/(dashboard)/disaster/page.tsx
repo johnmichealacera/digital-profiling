@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/select"
 import { Loader2, Plus, ShieldAlert, MapPin, Users, AlertTriangle, Map, UserX, CheckCircle, UserPlus, Calendar, Flag } from "lucide-react"
 import { formatResidentName } from "@/lib/utils"
+import { useSession } from "next-auth/react"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 
 const DisasterMap = dynamic(
   () => import("@/components/map/disaster-map").then((m) => ({ default: m.DisasterMap })),
@@ -120,6 +122,8 @@ const RISK_LABELS: Record<string, string> = {
 }
 
 export default function DisasterPage() {
+  const { data: session } = useSession()
+  const mapArea = tenantAreaPhraseFromSessionUser(session?.user ?? {})
   const [profiles, setProfiles] = useState<HouseholdProfile[]>([])
   const [evacuationCenters, setEvacuationCenters] = useState<EvacuationCenter[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
@@ -654,7 +658,7 @@ export default function DisasterPage() {
         </div>
       )}
 
-      {/* Disaster Map - Socorro, Surigao del Norte (Barangay Taruc) */}
+      {/* Disaster map — area label from signed-in tenant */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -662,7 +666,7 @@ export default function DisasterPage() {
             Disaster Preparedness Map
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Socorro, Surigao del Norte — Barangay Taruc. Household risk levels and evacuation centers.
+            {mapArea}. Household risk levels and evacuation centers.
           </p>
         </CardHeader>
         <CardContent>

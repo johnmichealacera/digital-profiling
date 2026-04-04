@@ -9,6 +9,7 @@ import { CivilStatusChart } from "@/components/dashboard/civil-status-chart"
 import { DisasterPrepCharts } from "@/components/dashboard/disaster-prep-charts"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 import type { Prisma } from "@/generated/prisma/client"
 import {
   barangayIdFilter,
@@ -194,7 +195,8 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Overview of Barangay Taruc digital profiling data
+          Overview of digital profiling data for{" "}
+          {tenantAreaPhraseFromSessionUser(session?.user ?? {})}.
         </p>
       </div>
 

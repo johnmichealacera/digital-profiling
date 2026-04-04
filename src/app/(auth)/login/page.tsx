@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { BARANGAY_INFO } from "@/lib/constants"
 import { Shield, Loader2 } from "lucide-react"
 
 export default function LoginPage() {
@@ -56,7 +55,8 @@ export default function LoginPage() {
               Digital Profiling System
             </CardTitle>
             <CardDescription className="mt-1 text-sm">
-              {BARANGAY_INFO.fullAddress}
+              Barangay and LGU digital profiling — sign in with your assigned
+              account.
             </CardDescription>
           </div>
         </CardHeader>
@@ -72,7 +72,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@barangaytaruc.gov.ph"
+                placeholder="you@example.gov.ph"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

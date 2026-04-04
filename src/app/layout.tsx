@@ -12,9 +12,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Digital Profiling System - Barangay Taruc",
+  title: "Digital Profiling System",
   description:
-    "Barangay Digital Profiling and Management System for Barangay Taruc, Socorro, Surigao del Norte",
+    "Barangay and LGU digital profiling and household management",
 }
 
 export default function RootLayout({

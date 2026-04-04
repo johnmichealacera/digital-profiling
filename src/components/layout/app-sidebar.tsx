@@ -216,10 +216,12 @@ export function AppSidebar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Shield className="h-5 w-5" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Brgy. Taruc</span>
-            <span className="text-xs text-muted-foreground">
-              Digital Profiling
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-semibold truncate">
+              {session?.user?.tenantTitle ?? "Digital Profiling"}
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              {session?.user?.tenantSubtitle ?? "Barangay profiling"}
             </span>
           </div>
         </Link>

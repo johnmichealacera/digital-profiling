@@ -3,6 +3,7 @@ import { HouseholdForm } from "@/components/households/household-form"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getTenantBarangayIds, purokWhereForTenant } from "@/lib/tenant"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 
 export default async function NewHouseholdPage() {
   const session = await getServerSession(authOptions)
@@ -18,7 +19,7 @@ export default async function NewHouseholdPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Add New Household</h1>
         <p className="text-muted-foreground">
-          Register a new household in Barangay Taruc
+          Register a new household in {tenantAreaPhraseFromSessionUser(session?.user ?? {})}.
         </p>
       </div>
       <HouseholdForm puroks={puroks} />

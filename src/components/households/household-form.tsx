@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
 import {
@@ -45,6 +46,7 @@ import {
   TOILET_FACILITIES,
   WATER_SOURCES,
 } from "@/lib/constants"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 
 const HouseholdLocationPicker = dynamic(
   () =>
@@ -67,6 +69,8 @@ interface Props {
 
 export function HouseholdForm({ puroks, defaultValues, householdId }: Props) {
   const router = useRouter()
+  const { data: session } = useSession()
+  const area = tenantAreaPhraseFromSessionUser(session?.user ?? {})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = !!householdId
 
@@ -183,8 +187,7 @@ export function HouseholdForm({ puroks, defaultValues, householdId }: Props) {
           <CardHeader>
             <CardTitle>Location on map</CardTitle>
             <CardDescription>
-              Click the map to set GPS coordinates for this household (Barangay
-              Taruc area).
+              Click the map to set GPS coordinates for this household ({area}).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

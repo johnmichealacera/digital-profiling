@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { compare } from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import type { UserRole } from "@/generated/prisma/client"
+import { resolveTenantBranding } from "@/lib/tenant-branding"
 
 declare module "next-auth" {
   interface User {
@@ -21,6 +22,10 @@ declare module "next-auth" {
       position?: string | null
       barangayId?: string | null
       municipalityId?: string | null
+      /** Sidebar / header primary label */
+      tenantTitle?: string | null
+      /** Sidebar / header secondary (municipality, province, scope) */
+      tenantSubtitle?: string | null
     }
   }
 }
@@ -32,6 +37,8 @@ declare module "next-auth/jwt" {
     position?: string | null
     barangayId?: string | null
     municipalityId?: string | null
+    tenantTitle?: string | null
+    tenantSubtitle?: string | null
   }
 }
 
@@ -89,6 +96,27 @@ export const authOptions: NextAuthOptions = {
         token.position = user.position
         token.barangayId = user.barangayId
         token.municipalityId = user.municipalityId
+        const branding = await resolveTenantBranding({
+          role: user.role,
+          barangayId: user.barangayId,
+          municipalityId: user.municipalityId,
+        })
+        token.tenantTitle = branding.tenantTitle
+        token.tenantSubtitle = branding.tenantSubtitle
+      } else if (token.id && token.tenantTitle == null) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, barangayId: true, municipalityId: true },
+        })
+        if (dbUser) {
+          const branding = await resolveTenantBranding({
+            role: dbUser.role,
+            barangayId: dbUser.barangayId,
+            municipalityId: dbUser.municipalityId,
+          })
+          token.tenantTitle = branding.tenantTitle
+          token.tenantSubtitle = branding.tenantSubtitle
+        }
       }
       return token
     },
@@ -99,6 +127,8 @@ export const authOptions: NextAuthOptions = {
         session.user.position = token.position
         session.user.barangayId = token.barangayId
         session.user.municipalityId = token.municipalityId
+        session.user.tenantTitle = token.tenantTitle ?? null
+        session.user.tenantSubtitle = token.tenantSubtitle ?? null
       }
       return session
     },

@@ -7,6 +7,7 @@ import {
   householdWhereForTenant,
   purokWhereForTenant,
 } from "@/lib/tenant"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 
 export default async function NewResidentPage() {
   const session = await getServerSession(authOptions)
@@ -29,7 +30,7 @@ export default async function NewResidentPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Add New Resident</h1>
         <p className="text-muted-foreground">
-          Register a new resident of Barangay Taruc
+          Register a new resident in {tenantAreaPhraseFromSessionUser(session?.user ?? {})}.
         </p>
       </div>
       <ResidentForm puroks={puroks} households={households} />
