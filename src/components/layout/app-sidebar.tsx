@@ -195,7 +195,7 @@ const NAVIGATION = [
         roles: ["SUPER_ADMIN"] as UserRole[],
       },
       {
-        name: "Settings",
+        name: "Puroks",
         href: "/settings/puroks",
         icon: Settings,
         roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],

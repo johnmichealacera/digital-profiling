@@ -34,6 +34,9 @@ type MunicipalityRow = {
   name: string
   province: string
   region: string | null
+  mapCenterLat: number | null
+  mapCenterLng: number | null
+  mapDefaultZoom: number
 }
 
 type BarangayRow = {
@@ -58,6 +61,9 @@ export function BarangayManagementClient() {
   const [muniName, setMuniName] = useState("")
   const [muniProvince, setMuniProvince] = useState("")
   const [muniRegion, setMuniRegion] = useState("")
+  const [muniLat, setMuniLat] = useState("")
+  const [muniLng, setMuniLng] = useState("")
+  const [muniZoom, setMuniZoom] = useState("15")
 
   const [brgySubmitting, setBrgySubmitting] = useState(false)
   const [brgyMunicipalityId, setBrgyMunicipalityId] = useState("")
@@ -93,6 +99,9 @@ export function BarangayManagementClient() {
   async function handleCreateMunicipality(e: React.FormEvent) {
     e.preventDefault()
     setMuniSubmitting(true)
+    const mLat = muniLat.trim() ? parseFloat(muniLat) : null
+    const mLng = muniLng.trim() ? parseFloat(muniLng) : null
+    const mZoom = muniZoom.trim() ? parseInt(muniZoom, 10) : undefined
     const res = await fetch("/api/municipalities", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -100,6 +109,10 @@ export function BarangayManagementClient() {
         name: muniName,
         province: muniProvince,
         region: muniRegion.trim() || null,
+        mapCenterLat: mLat != null && !Number.isNaN(mLat) ? mLat : null,
+        mapCenterLng: mLng != null && !Number.isNaN(mLng) ? mLng : null,
+        mapDefaultZoom:
+          mZoom != null && !Number.isNaN(mZoom) ? mZoom : undefined,
       }),
     })
     const data = await res.json().catch(() => ({}))
@@ -112,6 +125,9 @@ export function BarangayManagementClient() {
     setMuniName("")
     setMuniProvince("")
     setMuniRegion("")
+    setMuniLat("")
+    setMuniLng("")
+    setMuniZoom("15")
     load()
     setBrgyMunicipalityId((id) => id || data.id)
   }
@@ -211,6 +227,46 @@ export function BarangayManagementClient() {
                   onChange={(e) => setMuniRegion(e.target.value)}
                   placeholder="e.g. Caraga Region (Region XIII)"
                 />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Optional map defaults for municipal-level users (barangay
+                accounts use each barangay&apos;s map center when set).
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="m-lat">Map latitude</Label>
+                  <Input
+                    id="m-lat"
+                    type="number"
+                    step="any"
+                    value={muniLat}
+                    onChange={(e) => setMuniLat(e.target.value)}
+                    placeholder="e.g. 9.6215"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="m-lng">Map longitude</Label>
+                  <Input
+                    id="m-lng"
+                    type="number"
+                    step="any"
+                    value={muniLng}
+                    onChange={(e) => setMuniLng(e.target.value)}
+                    placeholder="e.g. 125.9589"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="m-zoom">Default zoom</Label>
+                  <Input
+                    id="m-zoom"
+                    type="number"
+                    min={1}
+                    max={22}
+                    value={muniZoom}
+                    onChange={(e) => setMuniZoom(e.target.value)}
+                    placeholder="15"
+                  />
+                </div>
               </div>
               <Button type="submit" disabled={muniSubmitting}>
                 {muniSubmitting ? (

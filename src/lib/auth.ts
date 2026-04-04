@@ -26,6 +26,9 @@ declare module "next-auth" {
       tenantTitle?: string | null
       /** Sidebar / header secondary (municipality, province, scope) */
       tenantSubtitle?: string | null
+      tenantMapCenterLat?: number | null
+      tenantMapCenterLng?: number | null
+      tenantMapDefaultZoom?: number | null
     }
   }
 }
@@ -39,6 +42,9 @@ declare module "next-auth/jwt" {
     municipalityId?: string | null
     tenantTitle?: string | null
     tenantSubtitle?: string | null
+    tenantMapCenterLat?: number | null
+    tenantMapCenterLng?: number | null
+    tenantMapDefaultZoom?: number | null
   }
 }
 
@@ -103,7 +109,13 @@ export const authOptions: NextAuthOptions = {
         })
         token.tenantTitle = branding.tenantTitle
         token.tenantSubtitle = branding.tenantSubtitle
-      } else if (token.id && token.tenantTitle == null) {
+        token.tenantMapCenterLat = branding.tenantMapCenterLat
+        token.tenantMapCenterLng = branding.tenantMapCenterLng
+        token.tenantMapDefaultZoom = branding.tenantMapDefaultZoom
+      } else if (
+        token.id &&
+        (token.tenantTitle == null || !("tenantMapDefaultZoom" in token))
+      ) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { role: true, barangayId: true, municipalityId: true },
@@ -116,6 +128,9 @@ export const authOptions: NextAuthOptions = {
           })
           token.tenantTitle = branding.tenantTitle
           token.tenantSubtitle = branding.tenantSubtitle
+          token.tenantMapCenterLat = branding.tenantMapCenterLat
+          token.tenantMapCenterLng = branding.tenantMapCenterLng
+          token.tenantMapDefaultZoom = branding.tenantMapDefaultZoom
         }
       }
       return token
@@ -129,6 +144,9 @@ export const authOptions: NextAuthOptions = {
         session.user.municipalityId = token.municipalityId
         session.user.tenantTitle = token.tenantTitle ?? null
         session.user.tenantSubtitle = token.tenantSubtitle ?? null
+        session.user.tenantMapCenterLat = token.tenantMapCenterLat ?? null
+        session.user.tenantMapCenterLng = token.tenantMapCenterLng ?? null
+        session.user.tenantMapDefaultZoom = token.tenantMapDefaultZoom ?? null
       }
       return session
     },

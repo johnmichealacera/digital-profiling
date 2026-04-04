@@ -231,6 +231,6 @@ export const BARANGAY_INFO = {
   fullAddress: "Barangay Taruc, Socorro, Surigao del Norte",
 } as const
 
-// Map center coordinates (approximate for Socorro, Surigao del Norte)
+/** Fallback map center when tenant has no map coordinates (see session / barangay settings). */
 export const MAP_CENTER: [number, number] = [9.6215, 125.9589]
 export const MAP_DEFAULT_ZOOM = 15

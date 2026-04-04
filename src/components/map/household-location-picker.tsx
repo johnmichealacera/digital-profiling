@@ -8,7 +8,8 @@ import {
   useMapEvents,
 } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
-import { MAP_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants"
+import { useSession } from "next-auth/react"
+import { mapViewFromSessionUser } from "@/lib/tenant-map-view"
 import { Button } from "@/components/ui/button"
 import { MapPin } from "lucide-react"
 
@@ -39,6 +40,11 @@ export function HouseholdLocationPicker({
   onClear: () => void
   mapInstanceKey?: string
 }) {
+  const { data: session } = useSession()
+  const { center: tenantCenter, zoom: tenantZoom } = mapViewFromSessionUser(
+    session?.user ?? {}
+  )
+
   const position = useMemo(() => {
     const lat = latitude != null ? Number(latitude) : NaN
     const lng = longitude != null ? Number(longitude) : NaN
@@ -46,7 +52,7 @@ export function HouseholdLocationPicker({
     return [lat, lng] as [number, number]
   }, [latitude, longitude])
 
-  const center = position ?? MAP_CENTER
+  const center = position ?? tenantCenter
 
   const handleClick = useCallback(
     (lat: number, lng: number) => {
@@ -65,9 +71,9 @@ export function HouseholdLocationPicker({
       </p>
       <div className="overflow-hidden rounded-md border">
         <MapContainer
-          key={mapInstanceKey}
+          key={`${mapInstanceKey}-${center[0]}-${center[1]}-${tenantZoom}`}
           center={center}
-          zoom={MAP_DEFAULT_ZOOM}
+          zoom={tenantZoom}
           style={{ height: "320px", width: "100%" }}
           scrollWheelZoom
         >

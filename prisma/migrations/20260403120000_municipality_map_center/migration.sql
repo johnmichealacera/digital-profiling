@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "municipalities" ADD COLUMN "mapCenterLat" DOUBLE PRECISION,
+ADD COLUMN "mapCenterLng" DOUBLE PRECISION,
+ADD COLUMN "mapDefaultZoom" INTEGER NOT NULL DEFAULT 15;

@@ -21,7 +21,8 @@ import {
 import { Card } from "@/components/ui/card"
 import { Loader2, Home, Users } from "lucide-react"
 import Link from "next/link"
-import { MAP_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants"
+import { useSession } from "next-auth/react"
+import { mapViewFromSessionUser } from "@/lib/tenant-map-view"
 import type { MapHousehold } from "@/types"
 
 // Color map for puroks
@@ -39,6 +40,8 @@ function getColor(purokName: string): string {
 }
 
 export function BarangayMap() {
+  const { data: session } = useSession()
+  const { center, zoom } = mapViewFromSessionUser(session?.user ?? {})
   const [households, setHouseholds] = useState<MapHousehold[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedPurok, setSelectedPurok] = useState<string>("all")
@@ -107,8 +110,9 @@ export function BarangayMap() {
       {/* Map */}
       <div className="overflow-hidden rounded-md border">
         <MapContainer
-          center={MAP_CENTER}
-          zoom={MAP_DEFAULT_ZOOM}
+          key={`${center[0]}-${center[1]}-${zoom}`}
+          center={center}
+          zoom={zoom}
           style={{ height: "600px", width: "100%" }}
           scrollWheelZoom={true}
         >

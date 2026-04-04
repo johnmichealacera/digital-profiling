@@ -10,7 +10,8 @@ import {
 import "leaflet/dist/leaflet.css"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Home, Users, MapPin, ShieldAlert } from "lucide-react"
-import { MAP_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants"
+import { useSession } from "next-auth/react"
+import { mapViewFromSessionUser } from "@/lib/tenant-map-view"
 
 type DisasterMapHousehold = {
   id: string
@@ -59,6 +60,8 @@ function getRiskColor(riskLevel: string): string {
 }
 
 export function DisasterMap() {
+  const { data: session } = useSession()
+  const { center, zoom } = mapViewFromSessionUser(session?.user ?? {})
   const [households, setHouseholds] = useState<DisasterMapHousehold[]>([])
   const [evacuationCenters, setEvacuationCenters] = useState<
     DisasterMapEvacuationCenter[]
@@ -113,8 +116,9 @@ export function DisasterMap() {
 
       <div className="overflow-hidden rounded-md border">
         <MapContainer
-          center={MAP_CENTER}
-          zoom={MAP_DEFAULT_ZOOM}
+          key={`${center[0]}-${center[1]}-${zoom}`}
+          center={center}
+          zoom={zoom}
           style={{ height: "500px", width: "100%" }}
           scrollWheelZoom={true}
         >

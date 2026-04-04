@@ -9,11 +9,29 @@ function requireSuperAdmin(session: Session | null) {
   return session?.user?.role === "SUPER_ADMIN"
 }
 
-const createMunicipalitySchema = z.object({
-  name: z.string().min(1).max(200).trim(),
-  province: z.string().min(1).max(200).trim(),
-  region: z.string().max(200).trim().optional().nullable(),
-})
+const createMunicipalitySchema = z
+  .object({
+    name: z.string().min(1).max(200).trim(),
+    province: z.string().min(1).max(200).trim(),
+    region: z.string().max(200).trim().optional().nullable(),
+    mapCenterLat: z.coerce.number().finite().optional().nullable(),
+    mapCenterLng: z.coerce.number().finite().optional().nullable(),
+    mapDefaultZoom: z.coerce.number().int().min(1).max(22).optional(),
+  })
+  .superRefine((val, ctx) => {
+    const hasLat =
+      val.mapCenterLat != null && Number.isFinite(val.mapCenterLat)
+    const hasLng =
+      val.mapCenterLng != null && Number.isFinite(val.mapCenterLng)
+    if (hasLat !== hasLng) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Provide both map latitude and longitude, or leave both empty.",
+        path: ["mapCenterLng"],
+      })
+    }
+  })
 
 /** Super admin: list municipalities for assigning municipal-scoped users. */
 export async function GET() {
@@ -29,6 +47,9 @@ export async function GET() {
       name: true,
       province: true,
       region: true,
+      mapCenterLat: true,
+      mapCenterLng: true,
+      mapDefaultZoom: true,
     },
   })
 
@@ -57,7 +78,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { name, province, region } = parsed.data
+  const {
+    name,
+    province,
+    region,
+    mapCenterLat,
+    mapCenterLng,
+    mapDefaultZoom,
+  } = parsed.data
 
   const existing = await prisma.municipality.findUnique({
     where: {
@@ -72,17 +100,30 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const lat =
+    mapCenterLat != null && Number.isFinite(mapCenterLat) ? mapCenterLat : null
+  const lng =
+    mapCenterLng != null && Number.isFinite(mapCenterLng) ? mapCenterLng : null
+
   const muni = await prisma.municipality.create({
     data: {
       name,
       province,
       region: region?.trim() || null,
+      mapCenterLat: lat,
+      mapCenterLng: lng,
+      ...(mapDefaultZoom != null && Number.isFinite(mapDefaultZoom)
+        ? { mapDefaultZoom }
+        : {}),
     },
     select: {
       id: true,
       name: true,
       province: true,
       region: true,
+      mapCenterLat: true,
+      mapCenterLng: true,
+      mapDefaultZoom: true,
     },
   })
 
