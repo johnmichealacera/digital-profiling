@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/prisma"
 import { ResidentTable } from "@/components/residents/resident-table"
 import { ResidentFilters } from "@/components/residents/resident-filters"
+import { ResidentImportDialog } from "@/components/residents/resident-import-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { Prisma } from "@/generated/prisma/client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { canPerformAction } from "@/lib/permissions"
+import { serializeResidentsForClient } from "@/lib/serialize-resident"
 
 interface Props {
   searchParams: Promise<{
@@ -19,6 +24,11 @@ interface Props {
 }
 
 export default async function ResidentsPage({ searchParams }: Props) {
+  const session = await getServerSession(authOptions)
+  const canImportResidents =
+    session?.user?.role != null &&
+    canPerformAction(session.user.role, "residents", "create")
+
   const params = await searchParams
   const page = parseInt(params.page || "1")
   const limit = 20
@@ -59,6 +69,7 @@ export default async function ResidentsPage({ searchParams }: Props) {
   ])
 
   const totalPages = Math.ceil(total / limit)
+  const residentsForTable = serializeResidentsForClient(residents)
 
   return (
     <div className="space-y-6">
@@ -69,18 +80,21 @@ export default async function ResidentsPage({ searchParams }: Props) {
             {total.toLocaleString()} registered resident{total !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/residents/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Resident
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canImportResidents && <ResidentImportDialog />}
+          <Button asChild>
+            <Link href="/residents/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Resident
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <ResidentFilters puroks={puroks} />
 
       <ResidentTable
-        residents={residents}
+        residents={residentsForTable}
         page={page}
         totalPages={totalPages}
         total={total}

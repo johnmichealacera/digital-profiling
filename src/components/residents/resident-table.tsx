@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
 import { CIVIL_STATUS_LABELS, SEX_LABELS } from "@/lib/constants"
-import type { ResidentWithHousehold } from "@/types"
+import type { ResidentWithHouseholdClient } from "@/types"
 
 interface Props {
-  residents: ResidentWithHousehold[]
+  residents: ResidentWithHouseholdClient[]
   page: number
   totalPages: number
   total: number

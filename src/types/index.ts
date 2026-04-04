@@ -15,6 +15,14 @@ export type ResidentWithHousehold = Resident & {
   household: (Household & { purok: Purok }) | null
 }
 
+/** Resident row safe to pass from Server → Client (no Prisma Decimal). */
+export type ResidentWithHouseholdClient = Omit<
+  ResidentWithHousehold,
+  "monthlyIncome"
+> & {
+  monthlyIncome: string | null
+}
+
 export type ResidentWithAll = Resident & {
   household: (Household & { purok: Purok }) | null
   documentRequests: DocumentRequest[]
