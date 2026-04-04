@@ -10,6 +10,8 @@ import {
   householdWhereForTenant,
   purokWhereForTenant,
 } from "@/lib/tenant"
+import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
+import type { Prisma } from "@/generated/prisma/client"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -24,11 +26,27 @@ export default async function EditResidentPage({ params }: Props) {
     notFound()
   }
 
-  const [resident, puroks, households] = await Promise.all([
+  const barangayWhere: Prisma.BarangayWhereInput | undefined =
+    tenantIds === null
+      ? undefined
+      : tenantIds.length > 0
+        ? { id: { in: tenantIds } }
+        : { id: { in: [] } }
+
+  const [resident, barangayRows, puroks, households] = await Promise.all([
     prisma.resident.findUnique({ where: { id } }),
+    prisma.barangay.findMany({
+      where: barangayWhere,
+      select: {
+        id: true,
+        name: true,
+        municipality: { select: { name: true, province: true } },
+      },
+      orderBy: [{ municipality: { name: "asc" } }, { name: "asc" }],
+    }),
     prisma.purok.findMany({
       where: purokWhereForTenant(tenantIds),
-      orderBy: { order: "asc" },
+      orderBy: [{ barangayId: "asc" }, { order: "asc" }],
     }),
     prisma.household.findMany({
       where: householdWhereForTenant(tenantIds),
@@ -47,6 +65,15 @@ export default async function EditResidentPage({ params }: Props) {
       : null,
   }
 
+  const barangays = barangayRows.map((b) => ({
+    id: b.id,
+    name: b.name,
+    municipalityName: b.municipality.name,
+    province: b.municipality.province,
+  }))
+
+  const scopeDescription = tenantAreaPhraseFromSessionUser(session?.user ?? {})
+
   return (
     <div className="space-y-6">
       <div>
@@ -56,8 +83,10 @@ export default async function EditResidentPage({ params }: Props) {
         </p>
       </div>
       <ResidentForm
+        barangays={barangays}
         puroks={puroks}
         households={households}
+        scopeDescription={scopeDescription}
         defaultValues={defaultValues}
         residentId={id}
       />

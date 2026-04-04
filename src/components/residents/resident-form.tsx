@@ -4,7 +4,7 @@ import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   residentSchema,
   type ResidentFormData,
@@ -47,22 +47,69 @@ import {
   RELATIONSHIPS_TO_HEAD,
 } from "@/lib/constants"
 
+export type ResidentFormBarangayOption = {
+  id: string
+  name: string
+  municipalityName: string
+  province: string
+}
+
+function initialBarangayContextId(
+  barangays: ResidentFormBarangayOption[],
+  households: (Household & { purok: Purok })[],
+  defaultHouseholdId?: string | null
+): string {
+  if (defaultHouseholdId) {
+    const hh = households.find((h) => h.id === defaultHouseholdId)
+    if (hh) return hh.barangayId
+  }
+  if (barangays.length === 1) return barangays[0]!.id
+  return ""
+}
+
+function initialPurokFilterId(
+  isEditing: boolean,
+  households: (Household & { purok: Purok })[],
+  defaultHouseholdId?: string | null
+): string {
+  if (!isEditing || !defaultHouseholdId) return "__all__"
+  const hh = households.find((h) => h.id === defaultHouseholdId)
+  return hh?.purokId ?? "__all__"
+}
+
 interface Props {
+  /** Barangays the signed-in account may use (tenant scope). */
+  barangays: ResidentFormBarangayOption[]
   puroks: Purok[]
   households: (Household & { purok: Purok })[]
+  /** Shown under the assignment card (e.g. barangay + municipality). */
+  scopeDescription?: string
   defaultValues?: Partial<ResidentFormData>
   residentId?: string
 }
 
 export function ResidentForm({
+  barangays,
   puroks,
   households,
+  scopeDescription,
   defaultValues,
   residentId,
 }: Props) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = !!residentId
+
+  const [barangayContextId, setBarangayContextId] = useState(() =>
+    initialBarangayContextId(
+      barangays,
+      households,
+      defaultValues?.householdId
+    )
+  )
+  const [purokFilterId, setPurokFilterId] = useState(() =>
+    initialPurokFilterId(isEditing, households, defaultValues?.householdId)
+  )
 
   const form = useForm<ResidentFormData>({
     resolver: zodResolver(residentSchema) as Resolver<ResidentFormData>,
@@ -87,6 +134,32 @@ export function ResidentForm({
       ...defaultValues,
     },
   })
+
+  const puroksForBarangay = useMemo(
+    () => puroks.filter((p) => p.barangayId === barangayContextId),
+    [puroks, barangayContextId]
+  )
+
+  const filteredHouseholds = useMemo(() => {
+    let list = households.filter((h) => h.barangayId === barangayContextId)
+    if (purokFilterId && purokFilterId !== "__all__") {
+      list = list.filter((h) => h.purokId === purokFilterId)
+    }
+    return list
+  }, [households, barangayContextId, purokFilterId])
+
+  const watchedHouseholdId = form.watch("householdId")
+  useEffect(() => {
+    if (!watchedHouseholdId) return
+    if (!filteredHouseholds.some((h) => h.id === watchedHouseholdId)) {
+      form.setValue("householdId", null)
+    }
+  }, [filteredHouseholds, watchedHouseholdId, form])
+
+  function handleBarangayContextChange(id: string) {
+    setBarangayContextId(id)
+    setPurokFilterId("__all__")
+  }
 
   async function onSubmit(data: ResidentFormData) {
     setIsSubmitting(true)
@@ -385,33 +458,119 @@ export function ResidentForm({
         {/* Household Assignment */}
         <Card>
           <CardHeader>
-            <CardTitle>Household Assignment</CardTitle>
+            <CardTitle>Barangay, purok & household</CardTitle>
+            <CardDescription>
+              {scopeDescription
+                ? `Scope: ${scopeDescription}. `
+                : null}
+              Households and puroks are limited to your account&apos;s access.
+              Pick a barangay when you cover more than one, optionally narrow by
+              purok, then choose the household.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {barangays.length > 1 ? (
+              <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                <label className="text-sm font-medium">Barangay *</label>
+                <Select
+                  value={barangayContextId || undefined}
+                  onValueChange={handleBarangayContextChange}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select barangay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {barangays.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        Brgy. {b.name} — {b.municipalityName}, {b.province}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!barangayContextId ? (
+                  <p className="text-muted-foreground text-xs">
+                    Select a barangay to load puroks and households for that
+                    jurisdiction.
+                  </p>
+                ) : null}
+              </div>
+            ) : barangays.length === 1 ? (
+              <div className="text-muted-foreground text-sm sm:col-span-2 lg:col-span-3">
+                <span className="font-medium text-foreground">Barangay: </span>
+                Brgy. {barangays[0]!.name} — {barangays[0]!.municipalityName},{" "}
+                {barangays[0]!.province}
+              </div>
+            ) : (
+              <p className="text-destructive text-sm sm:col-span-2 lg:col-span-3">
+                No barangay is assigned to your account. You cannot assign a
+                household until an administrator links you to a barangay.
+              </p>
+            )}
+
+            {barangayContextId ? (
+              <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                <label className="text-sm font-medium">
+                  Purok (optional filter)
+                </label>
+                <Select
+                  value={purokFilterId}
+                  onValueChange={setPurokFilterId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All puroks" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All puroks</SelectItem>
+                    {puroksForBarangay.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-muted-foreground text-xs">
+                  Restrict the household list to one purok, or leave as all
+                  puroks.
+                </p>
+              </div>
+            ) : null}
+
             <FormField
               control={form.control}
               name="householdId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="sm:col-span-2 lg:col-span-3">
                   <FormLabel>Household</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value ?? ""}
+                    value={field.value ?? "__none__"}
+                    onValueChange={(v) =>
+                      field.onChange(v === "__none__" ? null : v)
+                    }
+                    disabled={!barangayContextId}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select household" />
+                        <SelectValue placeholder="Select household (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {households.map((hh) => (
+                      <SelectItem value="__none__">No household</SelectItem>
+                      {filteredHouseholds.map((hh) => (
                         <SelectItem key={hh.id} value={hh.id}>
-                          #{hh.houseNo ?? "N/A"} - {hh.purok.name}{" "}
-                          {hh.streetSitio ? `(${hh.streetSitio})` : ""}
+                          #{hh.houseNo ?? "N/A"} — {hh.purok.name}
+                          {hh.streetSitio ? ` (${hh.streetSitio})` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {barangayContextId && filteredHouseholds.length === 0 ? (
+                    <p className="text-muted-foreground text-xs">
+                      No households match this barangay
+                      {purokFilterId !== "__all__" ? " and purok" : ""}. Add a
+                      household or change the purok filter.
+                    </p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}
