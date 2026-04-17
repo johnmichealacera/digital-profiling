@@ -280,6 +280,7 @@ model Barangay {
   projects          Project[]
   disasterEvents    DisasterEvent[]
   evacuationCenters EvacuationCenter[]
+  scopedResidents  Resident[]          @relation("ResidentBarangayScope")
 
   @@unique([municipalityId, name])
   @@map("barangays")
@@ -347,6 +348,7 @@ model Household {
 model Resident {
   id          String  @id @default(cuid())
   householdId String?
+  barangayId  String?
 
   // Filipino Name Convention
   firstName  String
@@ -413,6 +415,7 @@ model Resident {
   updatedAt DateTime @updatedAt
 
   household              Household?        @relation(fields: [householdId], references: [id])
+  barangay               Barangay?         @relation("ResidentBarangayScope", fields: [barangayId], references: [id], onDelete: SetNull)
   documentRequests       DocumentRequest[]
   healthRecords          HealthRecord[]
   blottersAsComplainant  Blotter[]         @relation("Complainant")
@@ -421,6 +424,7 @@ model Resident {
 
   @@index([lastName, firstName])
   @@index([householdId])
+  @@index([barangayId])
   @@index([isSeniorCitizen])
   @@index([isPwd])
   @@index([is4PsBeneficiary])

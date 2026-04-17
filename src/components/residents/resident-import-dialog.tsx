@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react"
 
 type ImportError = { row: number; messages: string[] }
@@ -37,16 +38,46 @@ export function ResidentImportDialog() {
   const [barangays, setBarangays] = useState<BarangayOption[]>([])
   const [barangaysLoading, setBarangaysLoading] = useState(false)
   const [selectedBarangayId, setSelectedBarangayId] = useState("")
+  const [lastImportResult, setLastImportResult] = useState<{
+    created: number
+    failed: number
+    errors: ImportError[]
+  } | null>(null)
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
+  const [showAllErrorRows, setShowAllErrorRows] = useState(false)
 
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN"
+  const needsBarangaySelection =
+    isSuperAdmin ||
+    (!session?.user?.barangayId &&
+      (session?.user?.municipalityId != null || session?.user?.role != null))
 
   function reset() {
     setFile(null)
-    if (isSuperAdmin) setSelectedBarangayId("")
+    if (needsBarangaySelection) setSelectedBarangayId("")
+    setLastImportResult(null)
+    setShowErrorDetails(false)
+    setShowAllErrorRows(false)
+  }
+
+  function prettifyImportMessage(message: string): string {
+    return message
+      .replace(/^possible duplicate:\s*/i, "Duplicate: ")
+      .replace(/^duplicate within import file:\s*/i, "Duplicate in file: ")
+      .replace("resident with same full name, birth date, and sex already exists", "same name, birth date, and sex already exists")
+      .replace("seniorCitizenIdNo", "Senior Citizen ID No.")
+      .replace("philhealthNo", "PhilHealth No.")
+      .replace("sssNo", "SSS No.")
+      .replace("pagibigNo", "Pag-IBIG No.")
+      .replace("tinNo", "TIN")
+      .replace("nationalIdNo", "National ID No.")
+      .replace("voterIdNo", "Voter ID No.")
+      .replace("pwdIdNo", "PWD ID No.")
+      .replace("soloParentIdNo", "Solo Parent ID No.")
   }
 
   useEffect(() => {
-    if (!open || !isSuperAdmin) return
+    if (!open || !needsBarangaySelection) return
     let cancelled = false
     setBarangaysLoading(true)
     fetch("/api/barangays")
@@ -88,7 +119,7 @@ export function ResidentImportDialog() {
     return () => {
       cancelled = true
     }
-  }, [open, isSuperAdmin])
+  }, [open, needsBarangaySelection])
 
   async function downloadTemplate() {
     const res = await fetch("/api/residents/import/template")
@@ -112,7 +143,9 @@ export function ResidentImportDialog() {
       toast.error("Choose an Excel file first")
       return
     }
-    if (isSuperAdmin && !selectedBarangayId) {
+    const effectiveBarangayId =
+      selectedBarangayId || (barangays.length === 1 ? barangays[0]!.id : "")
+    if (needsBarangaySelection && !effectiveBarangayId) {
       toast.error("Select a barangay for this import")
       return
     }
@@ -120,8 +153,8 @@ export function ResidentImportDialog() {
     const fd = new FormData()
     fd.set("file", file)
     const url =
-      isSuperAdmin && selectedBarangayId
-        ? `/api/residents/import?barangayId=${encodeURIComponent(selectedBarangayId)}`
+      needsBarangaySelection && effectiveBarangayId
+        ? `/api/residents/import?barangayId=${encodeURIComponent(effectiveBarangayId)}`
         : "/api/residents/import"
     const res = await fetch(url, { method: "POST", body: fd })
     const data = await res.json().catch(() => ({}))
@@ -135,6 +168,13 @@ export function ResidentImportDialog() {
     const created = data.created as number
     const failed = data.failed as number
     const errors = (data.errors as ImportError[]) ?? []
+    setLastImportResult({
+      created: created ?? 0,
+      failed: failed ?? 0,
+      errors,
+    })
+    setShowErrorDetails(false)
+    setShowAllErrorRows(false)
 
     if (created > 0) {
       toast.success(
@@ -147,15 +187,9 @@ export function ResidentImportDialog() {
     }
 
     if (errors.length > 0) {
-      const preview = errors
-        .slice(0, 5)
-        .map((e) => `Row ${e.row}: ${e.messages.join("; ")}`)
-        .join("\n")
       toast.error(
-        errors.length > 5
-          ? `${preview}\n… and ${errors.length - 5} more`
-          : preview,
-        { duration: 12_000 }
+        `${failed} row${failed === 1 ? "" : "s"} skipped. See details below.`,
+        { duration: 6000 }
       )
     }
 
@@ -180,17 +214,21 @@ export function ResidentImportDialog() {
           Import Excel
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90vh,640px)] min-h-0 w-full flex-col gap-0 overflow-hidden p-6 sm:max-w-md">
+        <DialogHeader className="shrink-0 space-y-2 pr-8 pb-4 text-left">
           <DialogTitle>Import residents from Excel</DialogTitle>
           <DialogDescription>
             Use the template so column names match. The first sheet should be
             named <span className="font-medium">Residents</span> (or use the
-            first sheet). Data starts on row 2.
+            first sheet). Data starts on row 2.{" "}
+            <span className="font-medium">household_house_no</span> and{" "}
+            <span className="font-medium">household_purok_name</span> are
+            optional. If provided, they must match an existing household.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          {isSuperAdmin && (
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-4">
+          {needsBarangaySelection && (
             <div className="space-y-2">
               <Label htmlFor="import-barangay">Barangay</Label>
               <Select
@@ -214,8 +252,7 @@ export function ResidentImportDialog() {
                 </SelectContent>
               </Select>
               <p className="text-muted-foreground text-xs">
-                Imports are scoped to the selected barangay (households and
-                puroks must belong there).
+                Imports are scoped to the selected barangay.
               </p>
             </div>
           )}
@@ -237,7 +274,9 @@ export function ResidentImportDialog() {
             >
               /resident-import-sample.xlsx
             </a>
-            .
+            . The generated template downloaded above now keeps household columns
+            blank by default, so residents import as unassigned unless you
+            intentionally fill household values.
           </p>
           <div className="space-y-2">
             <label className="text-sm font-medium">Excel file</label>
@@ -254,7 +293,8 @@ export function ResidentImportDialog() {
             disabled={
               submitting ||
               !file ||
-              (isSuperAdmin && (!selectedBarangayId || barangaysLoading))
+              (needsBarangaySelection &&
+                (!(selectedBarangayId || barangays.length === 1) || barangaysLoading))
             }
           >
             {submitting ? (
@@ -264,6 +304,101 @@ export function ResidentImportDialog() {
             )}
             Import
           </Button>
+
+          {lastImportResult && (
+            <div className="flex min-h-0 flex-col space-y-2 rounded-md border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">Import Result</p>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Created: {lastImportResult.created}</Badge>
+                  <Badge
+                    variant={lastImportResult.failed > 0 ? "destructive" : "outline"}
+                  >
+                    Failed: {lastImportResult.failed}
+                  </Badge>
+                </div>
+              </div>
+
+              {lastImportResult.failed > 0 ? (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Duplicate/validation rows were skipped. Review details only if needed.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => setShowErrorDetails((v) => !v)}
+                  >
+                    {showErrorDetails
+                      ? "Hide error details"
+                      : `Show error details (${lastImportResult.errors.length} rows)`}
+                  </Button>
+
+                  {showErrorDetails && (
+                    <div className="flex min-h-0 flex-col gap-2">
+                      <div className="flex shrink-0 items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          Showing{" "}
+                          {showAllErrorRows
+                            ? lastImportResult.errors.length
+                            : Math.min(10, lastImportResult.errors.length)}{" "}
+                          of {lastImportResult.errors.length} failed rows
+                        </p>
+                        {lastImportResult.errors.length > 10 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 shrink-0 px-2 text-xs"
+                            onClick={() => setShowAllErrorRows((v) => !v)}
+                          >
+                            {showAllErrorRows ? "Show less" : "Show all"}
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="max-h-[min(11rem,26vh)] min-h-0 overflow-y-auto overflow-x-auto rounded border bg-muted/20">
+                        <div className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2 border-b px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          <span>Row</span>
+                          <span>Issue</span>
+                          <span>More</span>
+                        </div>
+                        {(showAllErrorRows
+                          ? lastImportResult.errors
+                          : lastImportResult.errors.slice(0, 10)
+                        ).map((err) => {
+                          const first = err.messages[0]
+                          const remaining = err.messages.length - 1
+                          return (
+                            <div
+                              key={`row-${err.row}`}
+                              className="grid min-h-0 grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-2 border-b px-3 py-2 text-xs last:border-b-0"
+                            >
+                              <p className="font-medium text-foreground">Row {err.row}</p>
+                              <p
+                                className="truncate text-muted-foreground"
+                                title={prettifyImportMessage(first ?? "Validation error")}
+                              >
+                                {prettifyImportMessage(first ?? "Validation error")}
+                              </p>
+                              <span className="text-muted-foreground">
+                                {remaining > 0 ? `+${remaining}` : "—"}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">No row-level errors.</p>
+              )}
+            </div>
+          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

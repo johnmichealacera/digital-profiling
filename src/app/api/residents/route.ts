@@ -4,7 +4,7 @@ import { residentSchema } from "@/lib/validations/resident.schema"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Prisma } from "@/generated/prisma/client"
-import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
+import { getTenantBarangayIds, householdWhereForTenant, residentWhereForTenant } from "@/lib/tenant"
 import { canPerformAction } from "@/lib/permissions"
 
 export async function GET(req: NextRequest) {
@@ -41,11 +41,15 @@ export async function GET(req: NextRequest) {
 
   const hhScoped = householdWhereForTenant(tenantIds)
   if (tenantIds !== null) {
-    where.household = {
-      is: {
-        ...hhScoped,
-        ...(purokId ? { purokId } : {}),
-      },
+    if (purokId) {
+      where.household = {
+        is: {
+          ...hhScoped,
+          purokId,
+        },
+      }
+    } else {
+      Object.assign(where, residentWhereForTenant(tenantIds))
     }
   } else if (purokId) {
     where.household = { purokId }
@@ -111,6 +115,7 @@ export async function POST(req: NextRequest) {
 
   const tenantIds = await getTenantBarangayIds(session)
   const householdId = parsed.data.householdId
+  let residentBarangayId: string | null = null
   if (householdId) {
     const hh = await prisma.household.findUnique({
       where: { id: householdId },
@@ -125,17 +130,25 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+    residentBarangayId = hh.barangayId
+  } else if (session.user.barangayId) {
+    residentBarangayId = session.user.barangayId
+  } else if (tenantIds !== null && tenantIds.length === 1) {
+    residentBarangayId = tenantIds[0]!
   }
 
   const { dateOfBirth, monthlyIncome, emailAddress, ...rest } = parsed.data
 
+  const createData: Prisma.ResidentUncheckedCreateInput = {
+    ...rest,
+    dateOfBirth: new Date(dateOfBirth),
+    monthlyIncome: monthlyIncome ?? undefined,
+    emailAddress: emailAddress || null,
+    ...(residentBarangayId ? { barangayId: residentBarangayId } : {}),
+  }
+
   const resident = await prisma.resident.create({
-    data: {
-      ...rest,
-      dateOfBirth: new Date(dateOfBirth),
-      monthlyIncome: monthlyIncome ?? undefined,
-      emailAddress: emailAddress || null,
-    },
+    data: createData,
     include: {
       household: { include: { purok: true } },
     },

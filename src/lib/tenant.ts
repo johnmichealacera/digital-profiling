@@ -56,8 +56,15 @@ export function residentWhereForTenant(
     return {}
   }
   if (tenantIds.length === 0) return { id: { in: [] } }
+  const barangayScope: Prisma.ResidentWhereInput =
+    tenantIds.length === 1
+      ? { barangayId: tenantIds[0]! }
+      : { barangayId: { in: tenantIds } }
   return {
-    household: { is: householdWhereForTenant(tenantIds) },
+    OR: [
+      { household: { is: householdWhereForTenant(tenantIds) } },
+      { householdId: null, ...barangayScope },
+    ],
   }
 }
 
@@ -209,9 +216,16 @@ export async function assertResidentInTenant(
     where: { id: residentId },
     select: {
       householdId: true,
+      barangayId: true,
       household: { select: { barangayId: true } },
     },
   })
-  if (!r?.householdId || !r.household) return false
-  return tenantIds.includes(r.household.barangayId)
+  if (!r) return false
+  if (r.householdId && r.household) {
+    return tenantIds.includes(r.household.barangayId)
+  }
+  if (r.barangayId) {
+    return tenantIds.includes(r.barangayId)
+  }
+  return false
 }

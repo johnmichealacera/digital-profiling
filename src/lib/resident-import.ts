@@ -275,14 +275,14 @@ export function parseResidentRow(
   if (hhNo || purokName) {
     if (!hhNo || !purokName) {
       errors.push(
-        "household_house_no and household_purok_name must both be set to assign a household, or both left empty"
+        "household_house_no and household_purok_name must both be filled to match one household"
       )
     } else {
       const key = buildHouseholdLookupKey(hhNo, purokName, importBarangayId)
       const id = householdIdByKey.get(key)
       if (!id)
         errors.push(
-          `no household found for house "${hhNo}" in purok "${purokName}"`
+          `no household found for house "${hhNo}" in purok "${purokName}" (create the household in this barangay first; purok name must match exactly)`
         )
       else householdId = id
     }
@@ -361,6 +361,9 @@ export function parseResidentRow(
 
   if (householdId) {
     data.household = { connect: { id: householdId } }
+  } else {
+    // Keep unassigned imports tenant-scoped to the selected/import barangay.
+    data.barangay = { connect: { id: importBarangayId } }
   }
 
   return { rowNumber, data, errors: [] }
@@ -636,7 +639,7 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0")
 }
 
-/** 30 fictional residents for the template / sample workbook (household columns empty = import without linking). */
+/** 30 fictional sample rows. Household columns are left blank by default. */
 export function buildTemplateSampleRows(): Partial<
   Record<ResidentImportHeader, TemplateCell>
 >[] {
@@ -679,6 +682,8 @@ export function buildTemplateSampleRows(): Partial<
       indigenous_group: i === 22 ? "Mamanwa" : "",
       is_sk_member: i === 8 || i === 9,
       email_address: i % 10 === 0 ? `sample${i + 1}@example.com` : "",
+      household_house_no: "",
+      household_purok_name: "",
     }
     rows.push(row)
   }
@@ -706,7 +711,8 @@ export function buildTemplateWorkbook(): XLSX.WorkBook {
     "Required columns: first_name, last_name, sex (MALE or FEMALE), date_of_birth (YYYY-MM-DD or Excel date).",
     "civil_status: SINGLE, MARRIED, WIDOWED, SEPARATED, ANNULLED, LIVE_IN",
     "educational_attainment & employment_status: use UPPER_SNAKE values (see README or empty).",
-    "household_house_no + household_purok_name: must match existing household (exact purok name), or leave both empty.",
+    "household_house_no + household_purok_name: optional. If both are supplied, they must match an existing household (purok name exactly as in Settings → Puroks).",
+    "If household columns are blank, resident imports as unassigned and can be linked to a household later.",
     "Booleans: TRUE/FALSE, Yes/No, 1/0",
     "sss_no = SSS (Social Security System) number; aliases sss_no / sss accepted.",
     "",

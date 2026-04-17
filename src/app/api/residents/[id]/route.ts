@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { residentSchema } from "@/lib/validations/resident.schema"
 import { getServerSession } from "next-auth"
@@ -69,6 +70,7 @@ export async function PUT(
   }
 
   const householdId = parsed.data.householdId
+  let residentBarangayId: string | null = null
   if (householdId) {
     const hh = await prisma.household.findUnique({
       where: { id: householdId },
@@ -83,18 +85,26 @@ export async function PUT(
         { status: 400 }
       )
     }
+    residentBarangayId = hh.barangayId
+  } else if (session.user.barangayId) {
+    residentBarangayId = session.user.barangayId
+  } else if (tenantIds !== null && tenantIds.length === 1) {
+    residentBarangayId = tenantIds[0]!
   }
 
   const { dateOfBirth, monthlyIncome, emailAddress, ...rest } = parsed.data
 
+  const updateData: Prisma.ResidentUncheckedUpdateInput = {
+    ...rest,
+    dateOfBirth: new Date(dateOfBirth),
+    monthlyIncome: monthlyIncome ?? undefined,
+    emailAddress: emailAddress || null,
+    ...(residentBarangayId ? { barangayId: residentBarangayId } : {}),
+  }
+
   const resident = await prisma.resident.update({
     where: { id },
-    data: {
-      ...rest,
-      dateOfBirth: new Date(dateOfBirth),
-      monthlyIncome: monthlyIncome ?? undefined,
-      emailAddress: emailAddress || null,
-    },
+    data: updateData,
     include: {
       household: { include: { purok: true } },
     },
