@@ -10,7 +10,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { canPerformAction } from "@/lib/permissions"
 import { serializeResidentsForClient } from "@/lib/serialize-resident"
-import { getTenantBarangayIds, householdWhereForTenant } from "@/lib/tenant"
+import { getTenantBarangayIds, residentWhereForTenant } from "@/lib/tenant"
 
 interface Props {
   searchParams: Promise<{
@@ -54,13 +54,22 @@ export default async function ResidentsPage({ searchParams }: Props) {
     ]
   }
 
-  const hhScoped = householdWhereForTenant(tenantIds)
   if (tenantIds !== null) {
-    where.household = {
-      is: {
-        ...hhScoped,
-        ...(purokId ? { purokId } : {}),
-      },
+    if (purokId) {
+      where.household = {
+        is: {
+          ...(
+            tenantIds.length === 0
+              ? { id: { in: [] as string[] } }
+              : tenantIds.length === 1
+                ? { barangayId: tenantIds[0]! }
+                : { barangayId: { in: tenantIds } }
+          ),
+          purokId,
+        },
+      }
+    } else {
+      Object.assign(where, residentWhereForTenant(tenantIds))
     }
   } else if (purokId) {
     where.household = { purokId }
