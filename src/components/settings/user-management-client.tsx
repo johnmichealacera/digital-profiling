@@ -28,9 +28,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, UserPlus } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react"
 import { USER_ROLE_LABELS } from "@/lib/constants"
 import type { UserRole } from "@/generated/prisma/client"
+import { useSession } from "next-auth/react"
 
 type BarangayOption = {
   id: string
@@ -91,12 +100,24 @@ interface Props {
 
 export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
   const isSuperAdmin = callerRole === "SUPER_ADMIN"
+  const { data: session } = useSession()
 
   const [users, setUsers] = useState<UserRow[]>([])
   const [barangays, setBarangays] = useState<BarangayOption[]>([])
   const [municipalities, setMunicipalities] = useState<MunicipalityOption[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const [editTarget, setEditTarget] = useState<UserRow | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editRole, setEditRole] = useState<UserRole>("SECRETARY")
+  const [editPosition, setEditPosition] = useState("")
+  const [editIsActive, setEditIsActive] = useState(true)
+  const [editPassword, setEditPassword] = useState("")
+  const [editSubmitting, setEditSubmitting] = useState(false)
 
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
@@ -192,6 +213,62 @@ export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
     setMunicipalityId("")
     setRole(isSuperAdmin ? "BARANGAY_ADMIN" : "SECRETARY")
     load()
+  }
+
+  function openEdit(u: UserRow) {
+    setEditTarget(u)
+    setEditName(u.name)
+    setEditRole(u.role)
+    setEditPosition(u.position ?? "")
+    setEditIsActive(u.isActive)
+    setEditPassword("")
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editTarget) return
+    setEditSubmitting(true)
+
+    const res = await fetch(`/api/users/${editTarget.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editName,
+        role: editRole,
+        position: editPosition.trim() || null,
+        isActive: editIsActive,
+        newPassword: editPassword || null,
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+    setEditSubmitting(false)
+
+    if (!res.ok) {
+      toast.error(typeof data.error === "string" ? data.error : "Could not update account.")
+      return
+    }
+
+    toast.success(`Account for ${data.email} updated.`)
+    setEditTarget(null)
+    load()
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    const res = await fetch(`/api/users/${deleteTarget.id}`, { method: "DELETE" })
+    setDeleting(false)
+
+    if (res.status === 204) {
+      toast.success(`Account for ${deleteTarget.email} deleted.`)
+      setDeleteTarget(null)
+      load()
+      return
+    }
+
+    const data = await res.json().catch(() => ({}))
+    toast.error(typeof data.error === "string" ? data.error : "Could not delete account.")
   }
 
   if (loading) {
@@ -372,6 +449,7 @@ export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
                   <TableHead>Role</TableHead>
                   <TableHead>Access</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-20" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -392,11 +470,33 @@ export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
                         {u.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {u.id !== session?.user?.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteTarget(u)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                       No users found.
                     </TableCell>
                   </TableRow>
@@ -406,6 +506,116 @@ export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
           </div>
         </CardContent>
       </Card>
+      {/* Edit dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit account</DialogTitle>
+            <DialogDescription>
+              {editTarget?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Full name</Label>
+              <Input
+                id="edit-name"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(isSuperAdmin ? SUPER_ADMIN_ROLES : STAFF_ROLES).map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {USER_ROLE_LABELS[r] ?? r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-position">Position (optional)</Label>
+              <Input
+                id="edit-position"
+                value={editPosition}
+                onChange={(e) => setEditPosition(e.target.value)}
+                placeholder="e.g. Barangay Secretary"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={editIsActive ? "active" : "inactive"}
+                onValueChange={(v) => setEditIsActive(v === "active")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">New password (leave blank to keep current)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                placeholder="Min 8 characters"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTarget(null)} disabled={editSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={editSubmitting}>
+                {editSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete account?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the account for{" "}
+              <span className="font-medium">{deleteTarget?.name}</span> ({deleteTarget?.email}).
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
