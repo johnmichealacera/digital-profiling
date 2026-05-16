@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -92,4 +93,54 @@ export async function POST(
   })
 
   return NextResponse.json(updated)
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const role = session.user.role as UserRole
+  if (!canPerformAction(role, "households", "update")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const tenantIds = await getTenantBarangayIds(session)
+  const { id: householdId } = await params
+
+  if (!(await assertHouseholdInTenant(householdId, tenantIds))) {
+    return NextResponse.json({ error: "Household not found" }, { status: 404 })
+  }
+
+  const { searchParams } = new URL(req.url)
+  const residentId = searchParams.get("residentId")
+  if (!residentId) {
+    return NextResponse.json({ error: "residentId is required" }, { status: 400 })
+  }
+
+  const resident = await prisma.resident.findUnique({
+    where: { id: residentId },
+    select: { id: true, householdId: true },
+  })
+
+  if (!resident || resident.householdId !== householdId) {
+    return NextResponse.json(
+      { error: "Resident is not a member of this household" },
+      { status: 404 }
+    )
+  }
+
+  await prisma.resident.update({
+    where: { id: residentId },
+    data: { householdId: null, isHouseholdHead: false, relationshipToHead: null },
+  })
+
+  revalidatePath(`/households/${householdId}`)
+  revalidatePath(`/residents/${residentId}`)
+
+  return new NextResponse(null, { status: 204 })
 }

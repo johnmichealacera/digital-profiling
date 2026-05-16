@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { householdSchema } from "@/lib/validations/household.schema"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { canPerformAction } from "@/lib/permissions"
 import {
   assertHouseholdInTenant,
   assertPurokInTenant,
@@ -134,11 +135,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const role = session.user.role as import("@/generated/prisma/client").UserRole
+  if (!canPerformAction(role, "households", "delete")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const tenantIds = await getTenantBarangayIds(session)
   const { id } = await params
+
+  if (!(await assertHouseholdInTenant(id, tenantIds))) {
+    return NextResponse.json({ error: "Household not found" }, { status: 404 })
+  }
 
   const residentCount = await prisma.resident.count({
     where: { householdId: id, status: "ACTIVE" },
@@ -146,12 +157,12 @@ export async function DELETE(
 
   if (residentCount > 0) {
     return NextResponse.json(
-      { error: "Cannot delete household with active residents" },
+      { error: "Cannot delete a household that still has active members. Remove all members first." },
       { status: 400 }
     )
   }
 
   await prisma.household.delete({ where: { id } })
 
-  return NextResponse.json({ success: true })
+  return new NextResponse(null, { status: 204 })
 }

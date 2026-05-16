@@ -29,9 +29,15 @@ export type ResidentWithAll = Resident & {
   healthRecords: HealthRecord[]
 }
 
-/** Safe to pass Server → Client (monthlyIncome serialized to string). */
-export type ResidentWithAllClient = Omit<ResidentWithAll, "monthlyIncome"> & {
+/** DocumentRequest with Decimal fields serialized for Client Components. */
+export type DocumentRequestClient = Omit<DocumentRequest, "feeAmount"> & {
+  feeAmount: string | null
+}
+
+/** Safe to pass Server → Client (all Decimal fields serialized to string). */
+export type ResidentWithAllClient = Omit<ResidentWithAll, "monthlyIncome" | "documentRequests"> & {
   monthlyIncome: string | null
+  documentRequests: DocumentRequestClient[]
 }
 
 // ── Household with relations ─────────────────────────────────────────────────

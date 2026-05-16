@@ -39,6 +39,10 @@ export default async function ResidentDetailPage({ params }: Props) {
   const serialized = {
     ...resident,
     monthlyIncome: resident.monthlyIncome != null ? String(resident.monthlyIncome) : null,
+    documentRequests: resident.documentRequests.map((doc) => ({
+      ...doc,
+      feeAmount: doc.feeAmount != null ? String(doc.feeAmount) : null,
+    })),
   }
 
   return <ResidentProfile resident={serialized} />

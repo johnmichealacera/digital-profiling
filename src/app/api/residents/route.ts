@@ -27,16 +27,16 @@ export async function GET(req: NextRequest) {
   const is4PsBeneficiary = searchParams.get("is4PsBeneficiary")
   const status = searchParams.get("status") || "ACTIVE"
 
-  const where: Prisma.ResidentWhereInput = {
-    status: status as Prisma.EnumResidentStatusFilter["equals"],
-  }
+  const andConditions: Prisma.ResidentWhereInput[] = []
 
   if (search) {
-    where.OR = [
-      { firstName: { contains: search, mode: "insensitive" } },
-      { lastName: { contains: search, mode: "insensitive" } },
-      { middleName: { contains: search, mode: "insensitive" } },
-    ]
+    andConditions.push({
+      OR: [
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
+        { middleName: { contains: search, mode: "insensitive" } },
+      ],
+    })
   }
 
   if (purokId) {
@@ -52,26 +52,21 @@ export async function GET(req: NextRequest) {
           },
           select: { id: true },
         })) !== null)
-    if (purokValid) {
-      where.household = { purokId }
-    } else {
-      where.id = { in: [] }
-    }
+    andConditions.push(purokValid ? { household: { purokId } } : { id: { in: [] } })
   } else if (tenantIds !== null) {
-    Object.assign(where, residentWhereForTenant(tenantIds))
+    andConditions.push(residentWhereForTenant(tenantIds))
   }
 
-  if (sex) {
-    where.sex = sex as Prisma.EnumSexFilter["equals"]
-  }
+  if (sex) andConditions.push({ sex: sex as Prisma.EnumSexFilter["equals"] })
+  if (civilStatus) andConditions.push({ civilStatus: civilStatus as Prisma.EnumCivilStatusFilter["equals"] })
+  if (isSeniorCitizen === "true") andConditions.push({ isSeniorCitizen: true })
+  if (isPwd === "true") andConditions.push({ isPwd: true })
+  if (is4PsBeneficiary === "true") andConditions.push({ is4PsBeneficiary: true })
 
-  if (civilStatus) {
-    where.civilStatus = civilStatus as Prisma.EnumCivilStatusFilter["equals"]
+  const where: Prisma.ResidentWhereInput = {
+    status: status as Prisma.EnumResidentStatusFilter["equals"],
+    ...(andConditions.length > 0 ? { AND: andConditions } : {}),
   }
-
-  if (isSeniorCitizen === "true") where.isSeniorCitizen = true
-  if (isPwd === "true") where.isPwd = true
-  if (is4PsBeneficiary === "true") where.is4PsBeneficiary = true
 
   const skip = (page - 1) * limit
 

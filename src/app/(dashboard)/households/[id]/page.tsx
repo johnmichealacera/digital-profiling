@@ -19,11 +19,15 @@ import {
 } from "@/components/ui/table"
 import { ArrowLeft, Edit, Eye, MapPin } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
-import { SEX_LABELS, CIVIL_STATUS_LABELS } from "@/lib/constants"
+import { SEX_LABELS } from "@/lib/constants"
 import { AddHouseholdMemberDialog } from "@/components/households/add-household-member-dialog"
+import { RemoveHouseholdMemberButton } from "@/components/households/remove-household-member-button"
+import { DeleteHouseholdButton } from "@/components/households/delete-household-button"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { canPerformAction } from "@/lib/permissions"
 import { assertHouseholdInTenant, getTenantBarangayIds } from "@/lib/tenant"
+import type { UserRole } from "@/generated/prisma/client"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -33,6 +37,9 @@ export default async function HouseholdDetailPage({ params }: Props) {
   const session = await getServerSession(authOptions)
   const tenantIds = session ? await getTenantBarangayIds(session) : []
   const { id } = await params
+  const role = session?.user?.role as UserRole | undefined
+  const canDelete = role ? canPerformAction(role, "households", "delete") : false
+  const canUpdateMembers = role ? canPerformAction(role, "households", "update") : false
 
   if (!(await assertHouseholdInTenant(id, tenantIds))) {
     notFound()
@@ -70,12 +77,15 @@ export default async function HouseholdDetailPage({ params }: Props) {
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link href={`/households/${id}/edit`}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {canDelete && <DeleteHouseholdButton householdId={id} />}
+          <Button asChild>
+            <Link href={`/households/${id}/edit`}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -166,7 +176,7 @@ export default async function HouseholdDetailPage({ params }: Props) {
                   <TableHead>Sex</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="w-[50px]" />
+                  <TableHead className="w-[80px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -189,11 +199,20 @@ export default async function HouseholdDetailPage({ params }: Props) {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/residents/${resident.id}`}>
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-center">
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link href={`/residents/${resident.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        {canUpdateMembers && (
+                          <RemoveHouseholdMemberButton
+                            householdId={id}
+                            residentId={resident.id}
+                            residentName={formatResidentName(resident)}
+                          />
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

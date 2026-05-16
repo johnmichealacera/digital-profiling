@@ -42,16 +42,16 @@ export default async function ResidentsPage({ searchParams }: Props) {
   const purokId = params.purokId || ""
   const sex = params.sex || ""
 
-  const where: Prisma.ResidentWhereInput = {
-    status: "ACTIVE",
-  }
+  const andConditions: Prisma.ResidentWhereInput[] = []
 
   if (search) {
-    where.OR = [
-      { firstName: { contains: search, mode: "insensitive" } },
-      { lastName: { contains: search, mode: "insensitive" } },
-      { middleName: { contains: search, mode: "insensitive" } },
-    ]
+    andConditions.push({
+      OR: [
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
+        { middleName: { contains: search, mode: "insensitive" } },
+      ],
+    })
   }
 
   if (purokId) {
@@ -68,19 +68,20 @@ export default async function ResidentsPage({ searchParams }: Props) {
           },
           select: { id: true },
         })) !== null)
-    if (purokValid) {
-      where.household = { purokId }
-    } else {
-      where.id = { in: [] }
-    }
+    andConditions.push(purokValid ? { household: { purokId } } : { id: { in: [] } })
   } else if (tenantIds !== null) {
-    Object.assign(where, residentWhereForTenant(tenantIds))
+    andConditions.push(residentWhereForTenant(tenantIds))
   }
 
-  if (sex) where.sex = sex as Prisma.EnumSexFilter["equals"]
-  if (params.isSeniorCitizen === "true") where.isSeniorCitizen = true
-  if (params.isPwd === "true") where.isPwd = true
-  if (params.is4PsBeneficiary === "true") where.is4PsBeneficiary = true
+  if (sex) andConditions.push({ sex: sex as Prisma.EnumSexFilter["equals"] })
+  if (params.isSeniorCitizen === "true") andConditions.push({ isSeniorCitizen: true })
+  if (params.isPwd === "true") andConditions.push({ isPwd: true })
+  if (params.is4PsBeneficiary === "true") andConditions.push({ is4PsBeneficiary: true })
+
+  const where: Prisma.ResidentWhereInput = {
+    status: "ACTIVE",
+    ...(andConditions.length > 0 ? { AND: andConditions } : {}),
+  }
 
   const purokWhere =
     tenantIds === null
