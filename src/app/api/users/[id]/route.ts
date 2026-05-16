@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Session } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { z } from "zod"
 import type { UserRole } from "@/generated/prisma/client"
 
-function callerRole(session: Awaited<ReturnType<typeof getServerSession>>): UserRole | null {
+function callerRole(session: Session | null): UserRole | null {
   return (session?.user?.role as UserRole) ?? null
 }
 
