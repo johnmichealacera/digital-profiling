@@ -54,13 +54,21 @@ type UserRow = {
   barangayId: string | null
   municipalityId: string | null
   createdAt: string
-  barangay: {
-    name: string
-    municipality: { name: string; province: string }
-  } | null
+  barangay: { name: string; municipality: { name: string; province: string } } | null
   municipalityScope: { name: string; province: string } | null
 }
 
+// Roles a SUPER_ADMIN can create
+const SUPER_ADMIN_ROLES: UserRole[] = [
+  "BARANGAY_ADMIN",
+  "CAPTAIN",
+  "SECRETARY",
+  "TREASURER",
+  "KAGAWAD",
+  "SK_CHAIRMAN",
+]
+
+// Roles a BARANGAY_ADMIN can create (no admin-level roles)
 const STAFF_ROLES: UserRole[] = [
   "CAPTAIN",
   "SECRETARY",
@@ -71,16 +79,19 @@ const STAFF_ROLES: UserRole[] = [
 
 function scopeLabel(u: UserRow): string {
   if (u.role === "SUPER_ADMIN") return "System-wide"
-  if (u.barangay) {
-    return `${u.barangay.name} (${u.barangay.municipality.name})`
-  }
-  if (u.municipalityScope) {
-    return `Municipality: ${u.municipalityScope.name}, ${u.municipalityScope.province}`
-  }
+  if (u.barangay) return `${u.barangay.name} (${u.barangay.municipality.name})`
+  if (u.municipalityScope) return `Municipality: ${u.municipalityScope.name}, ${u.municipalityScope.province}`
   return "—"
 }
 
-export function UserManagementClient() {
+interface Props {
+  callerRole: "SUPER_ADMIN" | "BARANGAY_ADMIN"
+  callerBarangayId: string | null
+}
+
+export function UserManagementClient({ callerRole, callerBarangayId }: Props) {
+  const isSuperAdmin = callerRole === "SUPER_ADMIN"
+
   const [users, setUsers] = useState<UserRow[]>([])
   const [barangays, setBarangays] = useState<BarangayOption[]>([])
   const [municipalities, setMunicipalities] = useState<MunicipalityOption[]>([])
@@ -90,77 +101,96 @@ export function UserManagementClient() {
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState<UserRole>("SECRETARY")
+  const [role, setRole] = useState<UserRole>(isSuperAdmin ? "BARANGAY_ADMIN" : "SECRETARY")
   const [position, setPosition] = useState("")
-  const [accessScope, setAccessScope] = useState<"global" | "barangay" | "municipality">(
-    "barangay"
-  )
+  const [accessScope, setAccessScope] = useState<"global" | "barangay" | "municipality">("barangay")
   const [barangayId, setBarangayId] = useState("")
   const [municipalityId, setMunicipalityId] = useState("")
+
+  const availableRoles = isSuperAdmin ? SUPER_ADMIN_ROLES : STAFF_ROLES
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [uRes, bRes, mRes] = await Promise.all([
-        fetch("/api/users"),
-        fetch("/api/barangays"),
-        fetch("/api/municipalities"),
-      ])
+      const fetches: Promise<Response>[] = [fetch("/api/users"), fetch("/api/barangays")]
+      if (isSuperAdmin) fetches.push(fetch("/api/municipalities"))
+
+      const [uRes, bRes, mRes] = await Promise.all(fetches)
       if (uRes.ok) setUsers(await uRes.json())
       else toast.error("Could not load users")
       if (bRes.ok) setBarangays(await bRes.json())
-      else toast.error("Could not load barangays")
-      if (mRes.ok) setMunicipalities(await mRes.json())
-      else toast.error("Could not load municipalities")
+      if (mRes?.ok) setMunicipalities(await mRes.json())
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isSuperAdmin])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
+  // When role changes to SUPER_ADMIN (only possible for isSuperAdmin callers), force global scope
   useEffect(() => {
-    if (role === "SUPER_ADMIN") {
-      setAccessScope("global")
-    }
+    if (role === "SUPER_ADMIN") setAccessScope("global")
   }, [role])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+
+    // Client-side guard: barangay is required for any non-global role
+    if (isSuperAdmin && role !== "SUPER_ADMIN" && accessScope === "barangay" && !barangayId) {
+      toast.error("Please select a barangay for this account.")
+      return
+    }
+    if (isSuperAdmin && role !== "SUPER_ADMIN" && accessScope === "municipality" && !municipalityId) {
+      toast.error("Please select a municipality for this account.")
+      return
+    }
+
     setSubmitting(true)
+
+    const body = isSuperAdmin
+      ? {
+          email,
+          name,
+          password,
+          role,
+          position: position.trim() || null,
+          accessScope: role === "SUPER_ADMIN" ? "global" : accessScope,
+          barangayId: accessScope === "barangay" ? barangayId : null,
+          municipalityId: accessScope === "municipality" ? municipalityId : null,
+        }
+      : {
+          // BARANGAY_ADMIN: role + their barangay auto-assigned on the server
+          email,
+          name,
+          password,
+          role,
+          position: position.trim() || null,
+          accessScope: "barangay",
+          barangayId: callerBarangayId,
+          municipalityId: null,
+        }
+
     const res = await fetch("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        name,
-        password,
-        role,
-        position: position.trim() || null,
-        accessScope: role === "SUPER_ADMIN" ? "global" : accessScope,
-        barangayId: accessScope === "barangay" ? barangayId : null,
-        municipalityId: accessScope === "municipality" ? municipalityId : null,
-      }),
+      body: JSON.stringify(body),
     })
     const data = await res.json().catch(() => ({}))
     setSubmitting(false)
+
     if (!res.ok) {
-      toast.error(
-        typeof data.error === "string"
-          ? data.error
-          : "Could not create user. Check the form."
-      )
+      toast.error(typeof data.error === "string" ? data.error : "Could not create user. Check the form.")
       return
     }
-    toast.success(`User ${data.email} created`)
+
+    toast.success(`Account for ${data.email} created`)
     setEmail("")
     setName("")
     setPassword("")
     setPosition("")
     setBarangayId("")
     setMunicipalityId("")
+    setRole(isSuperAdmin ? "BARANGAY_ADMIN" : "SECRETARY")
     load()
   }
 
@@ -174,6 +204,7 @@ export function UserManagementClient() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-5">
+      {/* ── Create form ── */}
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -181,8 +212,9 @@ export function UserManagementClient() {
             New account
           </CardTitle>
           <CardDescription>
-            Barangay staff are limited to one barangay. Municipal access includes
-            all barangays under that municipality.
+            {isSuperAdmin
+              ? "Barangay staff are limited to one barangay. Municipal access includes all barangays under that municipality."
+              : "Create staff accounts for your barangay. All accounts will be scoped to your barangay."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -198,6 +230,7 @@ export function UserManagementClient() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="um-name">Full name</Label>
               <Input
@@ -207,6 +240,7 @@ export function UserManagementClient() {
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="um-password">Temporary password (min 8 characters)</Label>
               <Input
@@ -219,20 +253,15 @@ export function UserManagementClient() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select
-                value={role}
-                onValueChange={(v) => setRole(v as UserRole)}
-              >
+              <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SUPER_ADMIN">
-                    {USER_ROLE_LABELS.SUPER_ADMIN}
-                  </SelectItem>
-                  {STAFF_ROLES.map((r) => (
+                  {availableRoles.map((r) => (
                     <SelectItem key={r} value={r}>
                       {USER_ROLE_LABELS[r] ?? r}
                     </SelectItem>
@@ -240,6 +269,7 @@ export function UserManagementClient() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="um-position">Position (optional)</Label>
               <Input
@@ -250,30 +280,30 @@ export function UserManagementClient() {
               />
             </div>
 
-            {role !== "SUPER_ADMIN" && (
+            {/* Access scope — only shown to SUPER_ADMIN for non-superadmin roles */}
+            {isSuperAdmin && role !== "SUPER_ADMIN" && (
               <>
                 <div className="space-y-2">
                   <Label>Access</Label>
                   <Select
                     value={accessScope}
-                    onValueChange={(v) =>
-                      setAccessScope(v as "barangay" | "municipality")
-                    }
+                    onValueChange={(v) => setAccessScope(v as "barangay" | "municipality")}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="barangay">Single barangay</SelectItem>
-                      <SelectItem value="municipality">
-                        Whole municipality (all barangays)
-                      </SelectItem>
+                      <SelectItem value="municipality">Whole municipality (all barangays)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
                 {accessScope === "barangay" && (
                   <div className="space-y-2">
-                    <Label>Barangay</Label>
+                    <Label>
+                      Barangay <span className="text-destructive">*</span>
+                    </Label>
                     <Select value={barangayId} onValueChange={setBarangayId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select barangay" />
@@ -288,13 +318,13 @@ export function UserManagementClient() {
                     </Select>
                   </div>
                 )}
+
                 {accessScope === "municipality" && (
                   <div className="space-y-2">
-                    <Label>Municipality</Label>
-                    <Select
-                      value={municipalityId}
-                      onValueChange={setMunicipalityId}
-                    >
+                    <Label>
+                      Municipality <span className="text-destructive">*</span>
+                    </Label>
+                    <Select value={municipalityId} onValueChange={setMunicipalityId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select municipality" />
                       </SelectTrigger>
@@ -311,16 +341,22 @@ export function UserManagementClient() {
               </>
             )}
 
+            {/* For BARANGAY_ADMIN: show which barangay the account will be created in */}
+            {!isSuperAdmin && (
+              <p className="text-xs text-muted-foreground">
+                This account will be scoped to your barangay.
+              </p>
+            )}
+
             <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create account
             </Button>
           </form>
         </CardContent>
       </Card>
 
+      {/* ── Users table ── */}
       <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle className="text-lg">Accounts</CardTitle>
@@ -342,9 +378,7 @@ export function UserManagementClient() {
                 {users.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {u.email}
-                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
                         {USER_ROLE_LABELS[u.role] ?? u.role}

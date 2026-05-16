@@ -4,7 +4,7 @@ import { residentSchema } from "@/lib/validations/resident.schema"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Prisma } from "@/generated/prisma/client"
-import { getTenantBarangayIds, householdWhereForTenant, residentWhereForTenant } from "@/lib/tenant"
+import { getTenantBarangayIds, residentWhereForTenant } from "@/lib/tenant"
 import { canPerformAction } from "@/lib/permissions"
 
 export async function GET(req: NextRequest) {
@@ -39,20 +39,26 @@ export async function GET(req: NextRequest) {
     ]
   }
 
-  const hhScoped = householdWhereForTenant(tenantIds)
-  if (tenantIds !== null) {
-    if (purokId) {
-      where.household = {
-        is: {
-          ...hhScoped,
-          purokId,
-        },
-      }
+  if (purokId) {
+    const purokValid =
+      tenantIds === null ||
+      (tenantIds.length > 0 &&
+        (await prisma.purok.findFirst({
+          where: {
+            id: purokId,
+            ...(tenantIds.length === 1
+              ? { barangayId: tenantIds[0]! }
+              : { barangayId: { in: tenantIds } }),
+          },
+          select: { id: true },
+        })) !== null)
+    if (purokValid) {
+      where.household = { purokId }
     } else {
-      Object.assign(where, residentWhereForTenant(tenantIds))
+      where.id = { in: [] }
     }
-  } else if (purokId) {
-    where.household = { purokId }
+  } else if (tenantIds !== null) {
+    Object.assign(where, residentWhereForTenant(tenantIds))
   }
 
   if (sex) {

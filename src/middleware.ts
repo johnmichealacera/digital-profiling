@@ -4,6 +4,21 @@ import type { UserRole } from "@/generated/prisma/client"
 
 const ROLE_ROUTES: Record<UserRole, string[]> = {
   SUPER_ADMIN: ["/"],
+  BARANGAY_ADMIN: [
+    "/dashboard",
+    "/residents",
+    "/households",
+    "/documents",
+    "/blotter",
+    "/officials",
+    "/budget",
+    "/projects",
+    "/health",
+    "/disaster",
+    "/map",
+    "/reports",
+    "/settings",
+  ],
   CAPTAIN: [
     "/dashboard",
     "/residents",

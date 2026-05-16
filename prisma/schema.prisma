@@ -13,6 +13,7 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN
+  BARANGAY_ADMIN
   CAPTAIN
   SECRETARY
   TREASURER

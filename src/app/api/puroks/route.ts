@@ -13,7 +13,7 @@ const createPurokSchema = z.object({
   order: z.coerce.number().int().min(0).optional(),
 })
 
-const CAN_CREATE = new Set(["SUPER_ADMIN", "CAPTAIN", "SECRETARY"])
+const CAN_CREATE = new Set(["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"])
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)

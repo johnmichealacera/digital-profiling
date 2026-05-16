@@ -21,8 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { AddPurokForm } from "@/components/settings/add-purok-form"
+import { DeletePurokButton } from "@/components/settings/delete-purok-button"
 
-const ALLOWED = new Set(["SUPER_ADMIN", "CAPTAIN", "SECRETARY"])
+const ALLOWED = new Set(["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"])
 
 export default async function SettingsPuroksPage() {
   const session = await getServerSession(authOptions)
@@ -149,6 +150,7 @@ export default async function SettingsPuroksPage() {
                     <TableHead>Barangay</TableHead>
                   ) : null}
                   <TableHead>Municipality</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,12 +169,15 @@ export default async function SettingsPuroksPage() {
                       {p.barangay.municipality.name},{" "}
                       {p.barangay.municipality.province}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <DeletePurokButton purokId={p.id} purokName={p.name} />
+                    </TableCell>
                   </TableRow>
                 ))}
                 {puroks.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={showBarangayColumn ? 4 : 3}
+                      colSpan={showBarangayColumn ? 5 : 4}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No puroks in your scope.

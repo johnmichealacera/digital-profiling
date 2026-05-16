@@ -92,6 +92,22 @@ async function main() {
   })
   console.log(`Created super admin: ${admin.email}`)
 
+  // ── Barangay Admin ─────────────────────────────────────────────────────────
+  const brgyAdminPassword = await hash("brgy123", 12)
+  const brgyAdmin = await prisma.user.upsert({
+    where: { email: "brgyAdmin@barangaytaruc.gov.ph" },
+    update: { barangayId: barangay.id },
+    create: {
+      email: "brgyAdmin@barangaytaruc.gov.ph",
+      name: "Barangay Taruc Administrator",
+      password: brgyAdminPassword,
+      role: "BARANGAY_ADMIN",
+      position: "Barangay Administrator",
+      barangayId: barangay.id,
+    },
+  })
+  console.log(`Created barangay admin: ${brgyAdmin.email}`)
+
   // ── Additional Staff Accounts ──────────────────────────────────────────────
   const staffPassword = await hash("staff123", 12)
   const staffAccounts = [
@@ -340,10 +356,11 @@ async function main() {
 
   console.log("\nSeeding complete!")
   console.log("\nDefault login credentials:")
-  console.log("  Super Admin:  admin@barangaytaruc.gov.ph / admin123")
-  console.log("  Captain:      captain@barangaytaruc.gov.ph / staff123")
-  console.log("  Secretary:    secretary@barangaytaruc.gov.ph / staff123")
-  console.log("  Treasurer:    treasurer@barangaytaruc.gov.ph / staff123")
+  console.log("  Super Admin:     admin@barangaytaruc.gov.ph / admin123")
+  console.log("  Barangay Admin:  brgyAdmin@barangaytaruc.gov.ph / brgy123")
+  console.log("  Captain:         captain@barangaytaruc.gov.ph / staff123")
+  console.log("  Secretary:       secretary@barangaytaruc.gov.ph / staff123")
+  console.log("  Treasurer:       treasurer@barangaytaruc.gov.ph / staff123")
 }
 
 main()

@@ -54,25 +54,27 @@ export default async function ResidentsPage({ searchParams }: Props) {
     ]
   }
 
-  if (tenantIds !== null) {
-    if (purokId) {
-      where.household = {
-        is: {
-          ...(
-            tenantIds.length === 0
-              ? { id: { in: [] as string[] } }
-              : tenantIds.length === 1
-                ? { barangayId: tenantIds[0]! }
-                : { barangayId: { in: tenantIds } }
-          ),
-          purokId,
-        },
-      }
+  if (purokId) {
+    // Verify the purokId is within the tenant's scope, then filter by it directly.
+    const purokValid =
+      tenantIds === null ||
+      (tenantIds.length > 0 &&
+        (await prisma.purok.findFirst({
+          where: {
+            id: purokId,
+            ...(tenantIds.length === 1
+              ? { barangayId: tenantIds[0]! }
+              : { barangayId: { in: tenantIds } }),
+          },
+          select: { id: true },
+        })) !== null)
+    if (purokValid) {
+      where.household = { purokId }
     } else {
-      Object.assign(where, residentWhereForTenant(tenantIds))
+      where.id = { in: [] }
     }
-  } else if (purokId) {
-    where.household = { purokId }
+  } else if (tenantIds !== null) {
+    Object.assign(where, residentWhereForTenant(tenantIds))
   }
 
   if (sex) where.sex = sex as Prisma.EnumSexFilter["equals"]

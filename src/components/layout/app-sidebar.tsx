@@ -46,6 +46,7 @@ const NAVIGATION = [
         icon: LayoutDashboard,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "TREASURER",
@@ -64,6 +65,7 @@ const NAVIGATION = [
         icon: Users,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "KAGAWAD",
@@ -74,7 +76,7 @@ const NAVIGATION = [
         name: "Households",
         href: "/households",
         icon: Home,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
       },
       {
         name: "Barangay Map",
@@ -82,6 +84,7 @@ const NAVIGATION = [
         icon: Map,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "TREASURER",
@@ -98,7 +101,7 @@ const NAVIGATION = [
         name: "Disaster Prep",
         href: "/disaster",
         icon: ShieldAlert,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
       },
       {
         name: "Health Records",
@@ -106,6 +109,7 @@ const NAVIGATION = [
         icon: HeartPulse,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "SK_CHAIRMAN",
@@ -120,7 +124,7 @@ const NAVIGATION = [
         name: "Documents",
         href: "/documents",
         icon: FileText,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
       },
       {
         name: "Blotter",
@@ -128,6 +132,7 @@ const NAVIGATION = [
         icon: AlertTriangle,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "KAGAWAD",
@@ -142,13 +147,13 @@ const NAVIGATION = [
         name: "Officials",
         href: "/officials",
         icon: BadgeCheck,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
       },
       {
         name: "Budget & Finance",
         href: "/budget",
         icon: Wallet,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "TREASURER"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "TREASURER"] as UserRole[],
       },
       {
         name: "Projects",
@@ -156,6 +161,7 @@ const NAVIGATION = [
         icon: HardHat,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "KAGAWAD",
@@ -172,6 +178,7 @@ const NAVIGATION = [
         icon: BarChart3,
         roles: [
           "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
           "CAPTAIN",
           "SECRETARY",
           "TREASURER",
@@ -186,7 +193,7 @@ const NAVIGATION = [
         name: "User Management",
         href: "/settings/users",
         icon: UserCog,
-        roles: ["SUPER_ADMIN"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN"] as UserRole[],
       },
       {
         name: "Barangays",
@@ -198,7 +205,7 @@ const NAVIGATION = [
         name: "Puroks",
         href: "/settings/puroks",
         icon: Settings,
-        roles: ["SUPER_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
       },
     ],
   },

@@ -142,6 +142,7 @@ export const BUDGET_CATEGORY_LABELS: Record<string, string> = {
 
 export const USER_ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
+  BARANGAY_ADMIN: "Barangay Administrator",
   CAPTAIN: "Barangay Captain",
   SECRETARY: "Barangay Secretary",
   TREASURER: "Barangay Treasurer",

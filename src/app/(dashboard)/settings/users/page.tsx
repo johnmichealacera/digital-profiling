@@ -5,20 +5,28 @@ import { UserManagementClient } from "@/components/settings/user-management-clie
 
 export default async function SettingsUsersPage() {
   const session = await getServerSession(authOptions)
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  const role = session?.user?.role
+
+  if (role !== "SUPER_ADMIN" && role !== "BARANGAY_ADMIN") {
     redirect("/dashboard")
   }
+
+  const isSuperAdmin = role === "SUPER_ADMIN"
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">User management</h1>
         <p className="text-muted-foreground">
-          Create accounts and assign barangay or municipality access. Super Admin
-          has full system access without a barangay.
+          {isSuperAdmin
+            ? "Create accounts and assign barangay or municipality access. Super Admin has full system access without a barangay."
+            : "Manage staff accounts for your barangay. You can create and oversee all barangay staff roles."}
         </p>
       </div>
-      <UserManagementClient />
+      <UserManagementClient
+        callerRole={role}
+        callerBarangayId={session?.user?.barangayId ?? null}
+      />
     </div>
   )
 }
