@@ -4,7 +4,7 @@ import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   documentRequestSchema,
   type DocumentRequestFormData,
@@ -59,6 +59,7 @@ export function DocumentRequestForm() {
     null
   )
   const [showResults, setShowResults] = useState(false)
+  const skipSearchRef = useRef(false)
 
   const form = useForm<DocumentRequestFormData>({
     resolver: zodResolver(documentRequestSchema) as Resolver<DocumentRequestFormData>,
@@ -73,6 +74,10 @@ export function DocumentRequestForm() {
 
   // Search residents
   useEffect(() => {
+    if (skipSearchRef.current) {
+      skipSearchRef.current = false
+      return
+    }
     if (searchQuery.length < 2) {
       setSearchResults([])
       return
@@ -95,8 +100,10 @@ export function DocumentRequestForm() {
   function selectResident(resident: SearchResult) {
     setSelectedResident(resident)
     form.setValue("residentId", resident.id)
+    skipSearchRef.current = true
     setSearchQuery(formatResidentName(resident))
     setShowResults(false)
+    setSearchResults([])
   }
 
   async function onSubmit(data: DocumentRequestFormData) {

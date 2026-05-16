@@ -5,8 +5,8 @@ import { authOptions } from "@/lib/auth"
 import { generateCertificatePdf } from "@/lib/pdf/generate-certificate"
 import { assertDocumentInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
-export async function POST(
-  req: NextRequest,
+export async function GET(
+  _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions)

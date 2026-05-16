@@ -57,7 +57,15 @@ export default async function DocumentsPage({ searchParams }: Props) {
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
-        resident: true,
+        resident: {
+          select: {
+            id: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffix: true,
+          },
+        },
         encodedBy: { select: { id: true, name: true } },
         issuedBy: { select: { id: true, name: true } },
       },

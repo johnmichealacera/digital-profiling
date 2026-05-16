@@ -42,8 +42,14 @@ export type HouseholdWithResidents = Household & {
 
 // ── Document with relations ──────────────────────────────────────────────────
 
+/** Minimal resident shape used in the documents list — no Decimal fields. */
+export type ResidentForDocument = Pick<
+  Resident,
+  "id" | "firstName" | "middleName" | "lastName" | "suffix"
+>
+
 export type DocumentRequestWithResident = DocumentRequest & {
-  resident: Resident
+  resident: ResidentForDocument
   encodedBy: Pick<User, "id" | "name"> | null
   issuedBy: Pick<User, "id" | "name"> | null
 }

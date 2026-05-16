@@ -115,6 +115,7 @@ export async function generateCertificatePdf({
 
   page.drawText("TO WHOM IT MAY CONCERN:", {
     x: leftMargin,
+    y,
     size: fontSize,
     font: fontBold,
     color: black,
@@ -155,6 +156,40 @@ export async function generateCertificatePdf({
         `GOOD MORAL CHARACTER and has not been involved in any criminal activity in this barangay.\n\n` +
         `       This CERTIFICATE is being issued upon the request of the above-named person ` +
         `for ${doc.purpose} purposes.`
+      break
+    case "FIRST_TIME_JOB_SEEKER":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is a FIRST-TIME JOB SEEKER in accordance ` +
+        `with Republic Act No. 11261, otherwise known as the "First Time Jobseekers Assistance Act".\n\n` +
+        `       This CERTIFICATE is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    case "SOLO_PARENT_CERTIFICATE":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is a SOLO PARENT as defined under ` +
+        `Republic Act No. 8972, otherwise known as the "Solo Parents' Welfare Act of 2000".\n\n` +
+        `       This CERTIFICATE is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    case "BUSINESS_PERMIT":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is hereby granted a BARANGAY BUSINESS PERMIT ` +
+        `to operate${doc.businessName ? ` "${doc.businessName}"` : " a business"}` +
+        `${doc.businessType ? ` (${doc.businessType})` : ""}` +
+        `${doc.businessAddress ? ` located at ${doc.businessAddress}` : ""}` +
+        ` within the jurisdiction of this barangay.\n\n` +
+        `       This PERMIT is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    case "BARANGAY_ID":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, is a REGISTERED RESIDENT of ${address}.\n\n` +
+        `       This BARANGAY IDENTIFICATION is issued to certify the residency of the above-named person ` +
+        `within the jurisdiction of this barangay.`
       break
     default:
       bodyText =

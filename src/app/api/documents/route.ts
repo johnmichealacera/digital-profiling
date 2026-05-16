@@ -49,7 +49,15 @@ export async function GET(req: NextRequest) {
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
-        resident: true,
+        resident: {
+          select: {
+            id: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffix: true,
+          },
+        },
         encodedBy: { select: { id: true, name: true } },
         issuedBy: { select: { id: true, name: true } },
       },
@@ -96,13 +104,14 @@ export async function POST(req: NextRequest) {
   const resident = await prisma.resident.findUnique({
     where: { id: parsed.data.residentId },
     select: {
+      barangayId: true,
       household: { select: { barangayId: true } },
     },
   })
-  const barangayId = resident?.household?.barangayId
+  const barangayId = resident?.household?.barangayId ?? resident?.barangayId
   if (!barangayId) {
     return NextResponse.json(
-      { error: "Resident must belong to a household to request documents" },
+      { error: "Resident is not associated with a barangay" },
       { status: 400 }
     )
   }
