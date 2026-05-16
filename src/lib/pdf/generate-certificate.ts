@@ -90,8 +90,12 @@ export async function generateCertificatePdf({
     CERTIFICATE_OF_GOOD_MORAL: "CERTIFICATE OF GOOD MORAL CHARACTER",
     FIRST_TIME_JOB_SEEKER: "FIRST TIME JOB SEEKER CERTIFICATE",
     SOLO_PARENT_CERTIFICATE: "SOLO PARENT CERTIFICATE",
-    BUSINESS_PERMIT: "BARANGAY BUSINESS PERMIT",
+    BUSINESS_PERMIT: "BARANGAY BUSINESS PERMIT ENDORSEMENT",
     BARANGAY_ID: "BARANGAY IDENTIFICATION",
+    CEDULA: "COMMUNITY TAX CERTIFICATE",
+    SK_CERTIFICATION: "SANGGUNIANG KABATAAN CERTIFICATION",
+    SENIOR_CITIZEN_ID_ENDORSEMENT: "SENIOR CITIZEN ID ENDORSEMENT",
+    PWD_ID_ENDORSEMENT: "PERSON WITH DISABILITY ID ENDORSEMENT",
   }
   const title = titleMap[doc.documentType] || "CERTIFICATE"
   drawCentered(title, y, 16, fontBold)
@@ -190,6 +194,48 @@ export async function generateCertificatePdf({
         `Filipino, is a REGISTERED RESIDENT of ${address}.\n\n` +
         `       This BARANGAY IDENTIFICATION is issued to certify the residency of the above-named person ` +
         `within the jurisdiction of this barangay.`
+      break
+    case "CEDULA": {
+      const taxYear = new Date().getFullYear()
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, has paid the Community Tax for the year ${taxYear} ` +
+        `at the Office of the Barangay ${branding.barangayName}, ${branding.municipalityName}, ${branding.province}.\n\n` +
+        `       This COMMUNITY TAX CERTIFICATE (CEDULA) is issued in accordance with the Local Government ` +
+        `Code of 1991 (Republic Act No. 7160) upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    }
+    case "SK_CERTIFICATION":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is a registered youth constituent of this barangay ` +
+        `and is eligible for Sangguniang Kabataan (SK) programs and activities in accordance with ` +
+        `Republic Act No. 10742, otherwise known as the "Sangguniang Kabataan Reform Act of 2015".\n\n` +
+        `       This SK CERTIFICATION is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    case "SENIOR_CITIZEN_ID_ENDORSEMENT":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is a SENIOR CITIZEN of this barangay ` +
+        `in accordance with Republic Act No. 9994, otherwise known as the "Expanded Senior Citizens Act of 2010".\n\n` +
+        `       This office hereby ENDORSES the above-named person for the processing of his/her Senior Citizen ` +
+        `Identification Card at the Office for Senior Citizens Affairs (OSCA) of ${branding.municipalityName}.\n\n` +
+        `       This endorsement is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
+      break
+    case "PWD_ID_ENDORSEMENT":
+      bodyText =
+        `       This is to certify that ${fullName}, ${age} years old, ${civilStatus}, ` +
+        `Filipino, and a bonafide resident of ${address}, is a PERSON WITH DISABILITY (PWD) ` +
+        `in this barangay in accordance with Republic Act No. 7277 (Magna Carta for Persons with Disability) ` +
+        `as amended by Republic Act No. 9442.\n\n` +
+        `       This office hereby ENDORSES the above-named person for the processing of his/her PWD ` +
+        `Identification Card at the City/Municipal Social Welfare and Development Office (CSWDO/MSWDO) ` +
+        `of ${branding.municipalityName}.\n\n` +
+        `       This endorsement is being issued upon the request of the above-named person ` +
+        `for ${doc.purpose} purposes.`
       break
     default:
       bodyText =

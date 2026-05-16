@@ -27,7 +27,7 @@ import {
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_STATUS_LABELS,
 } from "@/lib/constants"
-import type { ResidentWithAll } from "@/types"
+import type { ResidentWithAllClient } from "@/types"
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null
@@ -39,7 +39,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   )
 }
 
-export function ResidentProfile({ resident }: { resident: ResidentWithAll }) {
+export function ResidentProfile({ resident }: { resident: ResidentWithAllClient }) {
   const age = computeAge(resident.dateOfBirth)
 
   return (
@@ -179,11 +179,7 @@ export function ResidentProfile({ resident }: { resident: ResidentWithAll }) {
             <InfoRow label="Employer" value={resident.employer} />
             <InfoRow
               label="Monthly Income"
-              value={
-                resident.monthlyIncome
-                  ? formatPeso(resident.monthlyIncome.toString())
-                  : null
-              }
+              value={resident.monthlyIncome ? formatPeso(resident.monthlyIncome) : null}
             />
           </CardContent>
         </Card>

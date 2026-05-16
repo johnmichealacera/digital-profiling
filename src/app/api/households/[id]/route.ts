@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { householdSchema } from "@/lib/validations/household.schema"
 import { getServerSession } from "next-auth"
@@ -106,11 +107,24 @@ export async function PUT(
     )
   }
 
+  // Fetch resident IDs before updating so we can revalidate their detail pages
+  const householdResidents = await prisma.resident.findMany({
+    where: { householdId: id },
+    select: { id: true },
+  })
+
   const household = await prisma.household.update({
     where: { id },
     data: parsed.data,
     include: { purok: true },
   })
+
+  revalidatePath(`/households/${id}`)
+  revalidatePath("/households")
+  for (const r of householdResidents) {
+    revalidatePath(`/residents/${r.id}`)
+  }
+  revalidatePath("/residents")
 
   return NextResponse.json(household)
 }

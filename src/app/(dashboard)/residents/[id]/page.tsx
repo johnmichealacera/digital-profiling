@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { assertResidentInTenant, getTenantBarangayIds } from "@/lib/tenant"
 
+export const dynamic = "force-dynamic"
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -34,5 +36,10 @@ export default async function ResidentDetailPage({ params }: Props) {
 
   if (!resident) notFound()
 
-  return <ResidentProfile resident={resident} />
+  const serialized = {
+    ...resident,
+    monthlyIncome: resident.monthlyIncome != null ? String(resident.monthlyIncome) : null,
+  }
+
+  return <ResidentProfile resident={serialized} />
 }

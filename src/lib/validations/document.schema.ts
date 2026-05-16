@@ -11,6 +11,10 @@ export const documentRequestSchema = z.object({
     "BARANGAY_ID",
     "FIRST_TIME_JOB_SEEKER",
     "SOLO_PARENT_CERTIFICATE",
+    "CEDULA",
+    "SK_CERTIFICATION",
+    "SENIOR_CITIZEN_ID_ENDORSEMENT",
+    "PWD_ID_ENDORSEMENT",
   ]),
   purpose: z.string().min(1, "Purpose is required"),
 

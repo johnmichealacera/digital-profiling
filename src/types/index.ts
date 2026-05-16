@@ -29,6 +29,11 @@ export type ResidentWithAll = Resident & {
   healthRecords: HealthRecord[]
 }
 
+/** Safe to pass Server → Client (monthlyIncome serialized to string). */
+export type ResidentWithAllClient = Omit<ResidentWithAll, "monthlyIncome"> & {
+  monthlyIncome: string | null
+}
+
 // ── Household with relations ─────────────────────────────────────────────────
 
 export type HouseholdWithPurok = Household & {

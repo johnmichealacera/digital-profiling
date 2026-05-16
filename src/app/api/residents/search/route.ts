@@ -22,11 +22,16 @@ export async function GET(req: NextRequest) {
   const residents = await prisma.resident.findMany({
     where: {
       status: "ACTIVE",
-      OR: [
-        { firstName: { contains: q, mode: "insensitive" } },
-        { lastName: { contains: q, mode: "insensitive" } },
+      AND: [
+        {
+          OR: [
+            { firstName: { contains: q, mode: "insensitive" } },
+            { lastName: { contains: q, mode: "insensitive" } },
+            { middleName: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        residentWhereForTenant(tenantIds),
       ],
-      ...residentWhereForTenant(tenantIds),
     },
     take: 10,
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],

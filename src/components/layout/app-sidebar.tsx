@@ -95,29 +95,6 @@ const NAVIGATION = [
     ],
   },
   {
-    title: "Health & Safety",
-    items: [
-      {
-        name: "Disaster Prep",
-        href: "/disaster",
-        icon: ShieldAlert,
-        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
-      },
-      {
-        name: "Health Records",
-        href: "/health",
-        icon: HeartPulse,
-        roles: [
-          "SUPER_ADMIN",
-          "BARANGAY_ADMIN",
-          "CAPTAIN",
-          "SECRETARY",
-          "SK_CHAIRMAN",
-        ] as UserRole[],
-      },
-    ],
-  },
-  {
     title: "Services",
     items: [
       {
@@ -136,6 +113,29 @@ const NAVIGATION = [
           "CAPTAIN",
           "SECRETARY",
           "KAGAWAD",
+        ] as UserRole[],
+      },
+    ],
+  },
+  {
+    title: "Health & Safety",
+    items: [
+      {
+        name: "Disaster Prep",
+        href: "/disaster",
+        icon: ShieldAlert,
+        roles: ["SUPER_ADMIN", "BARANGAY_ADMIN", "CAPTAIN", "SECRETARY"] as UserRole[],
+      },
+      {
+        name: "Health Records",
+        href: "/health",
+        icon: HeartPulse,
+        roles: [
+          "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
+          "CAPTAIN",
+          "SECRETARY",
+          "SK_CHAIRMAN",
         ] as UserRole[],
       },
     ],

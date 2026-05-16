@@ -4,11 +4,15 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   BARANGAY_CLEARANCE: "Barangay Clearance",
   CERTIFICATE_OF_INDIGENCY: "Certificate of Indigency",
   CERTIFICATE_OF_RESIDENCY: "Certificate of Residency",
-  BUSINESS_PERMIT: "Business Permit",
+  BUSINESS_PERMIT: "Business Permit Endorsement",
   CERTIFICATE_OF_GOOD_MORAL: "Certificate of Good Moral Character",
   BARANGAY_ID: "Barangay ID",
   FIRST_TIME_JOB_SEEKER: "First Time Job Seeker Certificate",
   SOLO_PARENT_CERTIFICATE: "Solo Parent Certificate",
+  CEDULA: "Cedula (Community Tax Certificate)",
+  SK_CERTIFICATION: "SK Certification",
+  SENIOR_CITIZEN_ID_ENDORSEMENT: "Senior Citizen ID Endorsement",
+  PWD_ID_ENDORSEMENT: "PWD ID Endorsement",
 }
 
 export const DOCUMENT_TYPE_PREFIXES: Record<string, string> = {
@@ -20,6 +24,10 @@ export const DOCUMENT_TYPE_PREFIXES: Record<string, string> = {
   BARANGAY_ID: "BID",
   FIRST_TIME_JOB_SEEKER: "FTJS",
   SOLO_PARENT_CERTIFICATE: "SPC",
+  CEDULA: "CTC",
+  SK_CERTIFICATION: "SKC",
+  SENIOR_CITIZEN_ID_ENDORSEMENT: "SCID",
+  PWD_ID_ENDORSEMENT: "PWDID",
 }
 
 // ── Document Purposes ────────────────────────────────────────────────────────
