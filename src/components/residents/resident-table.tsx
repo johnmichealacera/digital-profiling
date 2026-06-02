@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { ChevronLeft, ChevronRight, Eye, Loader2, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Eye, Loader2, Pencil, Trash2 } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
 import { CIVIL_STATUS_LABELS, SEX_LABELS } from "@/lib/constants"
 import type { ResidentWithHouseholdClient } from "@/types"
@@ -33,6 +33,7 @@ interface Props {
   totalPages: number
   total: number
   canBulkDelete?: boolean
+  canUpdate?: boolean
 }
 
 export function ResidentTable({
@@ -41,6 +42,7 @@ export function ResidentTable({
   totalPages,
   total,
   canBulkDelete = false,
+  canUpdate = false,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -116,20 +118,35 @@ export function ResidentTable({
 
   return (
     <div className="space-y-4">
-      {canBulkDelete && (
+      {(canBulkDelete || canUpdate) && (
         <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
           <p className="text-sm text-muted-foreground">
             {selectedOnPage.length} selected on this page
           </p>
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={selectedOnPage.length === 0}
-            onClick={() => setConfirmOpen(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Selected
-          </Button>
+          <div className="flex items-center gap-2">
+            {canUpdate && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={selectedOnPage.length !== 1}
+                onClick={() => router.push(`/residents/${selectedOnPage[0]}/edit`)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Update
+              </Button>
+            )}
+            {canBulkDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selectedOnPage.length === 0}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Selected
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -137,7 +154,7 @@ export function ResidentTable({
         <Table>
           <TableHeader>
             <TableRow>
-              {canBulkDelete && (
+              {(canBulkDelete || canUpdate) && (
                 <TableHead className="w-[42px]">
                   <Checkbox
                     checked={allSelectedOnPage ? true : someSelectedOnPage ? "indeterminate" : false}
@@ -159,7 +176,7 @@ export function ResidentTable({
             {residents.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={canBulkDelete ? 8 : 7}
+                  colSpan={(canBulkDelete || canUpdate) ? 8 : 7}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No residents found.
@@ -168,7 +185,7 @@ export function ResidentTable({
             ) : (
               residents.map((resident) => (
                 <TableRow key={resident.id}>
-                  {canBulkDelete && (
+                  {(canBulkDelete || canUpdate) && (
                     <TableCell>
                       <Checkbox
                         checked={selectedIds.includes(resident.id)}

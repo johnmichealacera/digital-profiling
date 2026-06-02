@@ -65,6 +65,11 @@ export type DocumentRequestWithResident = DocumentRequest & {
   issuedBy: Pick<User, "id" | "name"> | null
 }
 
+/** Safe to pass Server → Client (feeAmount serialized to string). */
+export type DocumentRequestWithResidentClient = Omit<DocumentRequestWithResident, "feeAmount"> & {
+  feeAmount: string | null
+}
+
 // ── Blotter with relations ───────────────────────────────────────────────────
 
 export type BlotterWithParties = Blotter & {

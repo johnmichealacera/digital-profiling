@@ -31,7 +31,7 @@ import {
   DOCUMENT_STATUS_LABELS,
 } from "@/lib/constants"
 import { toast } from "sonner"
-import type { DocumentRequestWithResident } from "@/types"
+import type { DocumentRequestWithResidentClient } from "@/types"
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   PENDING: "outline",
@@ -43,7 +43,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "dest
 }
 
 interface Props {
-  documents: DocumentRequestWithResident[]
+  documents: DocumentRequestWithResidentClient[]
   page: number
   totalPages: number
   total: number
@@ -86,8 +86,8 @@ export function DocumentTable({ documents, page, totalPages, total }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead>Control No.</TableHead>
-              <TableHead>Resident</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Resident</TableHead>
               <TableHead>Purpose</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
@@ -110,12 +110,12 @@ export function DocumentTable({ documents, page, totalPages, total }: Props) {
                   <TableCell className="font-mono text-xs">
                     {doc.controlNo}
                   </TableCell>
-                  <TableCell className="font-medium">
-                    {formatResidentName(doc.resident)}
-                  </TableCell>
                   <TableCell className="text-sm">
                     {DOCUMENT_TYPE_LABELS[doc.documentType] ??
                       doc.documentType}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {formatResidentName(doc.resident)}
                   </TableCell>
                   <TableCell className="max-w-[150px] truncate text-sm">
                     {doc.purpose}

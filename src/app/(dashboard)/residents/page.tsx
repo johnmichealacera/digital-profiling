@@ -32,6 +32,9 @@ export default async function ResidentsPage({ searchParams }: Props) {
   const canBulkDeleteResidents =
     session?.user?.role != null &&
     canPerformAction(session.user.role, "residents", "delete")
+  const canUpdateResidents =
+    session?.user?.role != null &&
+    canPerformAction(session.user.role, "residents", "update")
 
   const tenantIds = session ? await getTenantBarangayIds(session) : []
 
@@ -138,6 +141,7 @@ export default async function ResidentsPage({ searchParams }: Props) {
         totalPages={totalPages}
         total={total}
         canBulkDelete={canBulkDeleteResidents}
+        canUpdate={canUpdateResidents}
       />
     </div>
   )

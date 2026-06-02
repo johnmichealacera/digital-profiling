@@ -74,6 +74,10 @@ export default async function DocumentsPage({ searchParams }: Props) {
   ])
 
   const totalPages = Math.ceil(total / limit)
+  const serializedDocuments = documents.map((doc) => ({
+    ...doc,
+    feeAmount: doc.feeAmount != null ? String(doc.feeAmount) : null,
+  }))
 
   return (
     <div className="space-y-6">
@@ -96,7 +100,7 @@ export default async function DocumentsPage({ searchParams }: Props) {
       <DocumentFilters />
 
       <DocumentTable
-        documents={documents}
+        documents={serializedDocuments}
         page={page}
         totalPages={totalPages}
         total={total}
