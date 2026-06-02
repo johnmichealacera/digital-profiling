@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Defense Demo — Digital Profiling System · Barangay Taruc, Socorro, Surigao del Norte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --void:#ffffff;
+  --deep:#f0f4ff;
+  --ink:#0c1a3a;
+  --t90:rgba(12,26,58,0.90);
+  --t70:rgba(12,26,58,0.65);
+  --t45:rgba(12,26,58,0.40);
+  --t20:rgba(12,26,58,0.14);
+  --t08:rgba(12,26,58,0.07);
+
+  /* Role palette */
+  --super:#7c3aed;
+  --super-bg:#f5f3ff;
+  --super-border:#ddd6fe;
+  --captain:#059669;
+  --captain-bg:#ecfdf5;
+  --captain-border:#a7f3d0;
+  --secretary:#2563eb;
+  --secretary-bg:#eff6ff;
+  --secretary-border:#bfdbfe;
+  --treasurer:#d97706;
+  --treasurer-bg:#fffbeb;
+  --treasurer-border:#fde68a;
+  --public:#64748b;
+  --public-bg:#f8fafc;
+  --public-border:#e2e8f0;
+
+  /* Brand */
+  --brand:#1e40af;
+  --brand-light:#3b82f6;
+  --brand-pale:#eff6ff;
+  --brand-border:#bfdbfe;
+}
+
+html{scroll-behavior:smooth;font-size:16px;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:#ffffff;
+  color:var(--ink);
+  overflow-x:hidden;
+}
+
+/* ── PROGRESS NAV ── */
+#progress-bar{
+  position:fixed;top:0;left:0;
+  height:3px;width:0%;
+  background:linear-gradient(90deg,#1e40af,#3b82f6,#6366f1);
+  z-index:1000;
+  transition:width 0.2s ease;
+}
+#nav{
+  position:fixed;top:3px;left:0;right:0;
+  height:52px;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(12,26,58,0.07);
+  box-shadow:0 1px 12px rgba(12,26,58,0.05);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  z-index:999;
+}
+.nav-brand{font-size:13px;font-weight:600;color:#64748b;}
+.nav-brand b{color:var(--brand);}
+.nav-dots{display:flex;align-items:center;gap:6px;}
+.nav-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(12,26,58,0.14);
+  cursor:pointer;
+  transition:all 0.25s;
+  border:none;
+  padding:0;
+}
+.nav-dot.active{width:20px;border-radius:4px;background:var(--brand);}
+.nav-dot:hover:not(.active){background:rgba(30,64,175,0.35);}
+.nav-kbd{
+  font-size:11px;color:var(--t45);
+  display:flex;align-items:center;gap:6px;
+}
+.kbd{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:18px;
+  background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;
+  font-size:10px;font-weight:600;color:#475569;
+}
+
+/* ── SECTIONS ── */
+.slide{
+  min-height:100vh;
+  padding:80px 48px 60px;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+.slide-inner{max-width:1060px;margin:0 auto;width:100%;}
+
+/* ── TITLE SLIDE ── */
+#s0{background:linear-gradient(160deg,#eff6ff 0%,#ffffff 55%,#f5f3ff 100%);}
+#s0::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(#bfdbfe 1px,transparent 1px);
+  background-size:30px 30px;
+  opacity:0.30;
+  pointer-events:none;
+}
+.title-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:#ffffff;border:1px solid var(--brand-border);border-radius:24px;
+  padding:5px 14px;
+  font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:22px;
+}
+.hero-title{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(28px,4.5vw,56px);
+  line-height:1.1;color:#0c1a3a;
+  margin-bottom:16px;
+}
+.hero-title span{
+  background:linear-gradient(135deg,#1e40af,#3b82f6,#6366f1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-size:17px;color:var(--t70);max-width:600px;line-height:1.6;margin-bottom:40px;}
+.stat-row{display:flex;flex-wrap:wrap;gap:16px;}
+.stat-pill{
+  background:#ffffff;border:1px solid var(--brand-border);border-radius:10px;
+  padding:14px 22px;text-align:center;
+}
+.stat-num{font-size:28px;font-weight:700;color:var(--brand);line-height:1;}
+.stat-lbl{font-size:11px;color:var(--t70);margin-top:4px;letter-spacing:0.04em;}
+
+/* ── ACCOUNTS SLIDE ── */
+#s1{background:var(--deep);}
+.accounts-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;margin-top:24px;
+}
+.account-card{
+  background:#ffffff;border-radius:10px;
+  padding:14px 16px;
+  border-left:4px solid var(--role-color,var(--brand));
+  border-top:1px solid rgba(12,26,58,0.07);
+  border-right:1px solid rgba(12,26,58,0.07);
+  border-bottom:1px solid rgba(12,26,58,0.07);
+}
+.account-role{
+  font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--role-color,var(--brand));margin-bottom:5px;
+}
+.account-name{font-size:14px;font-weight:600;color:#1e293b;}
+.account-login{font-size:11px;color:var(--t45);font-family:monospace;margin-top:3px;}
+.account-pass{font-size:11px;color:var(--t45);font-family:monospace;}
+.account-scope{
+  display:inline-block;margin-top:7px;
+  font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;
+  background:rgba(12,26,58,0.06);border-radius:4px;padding:2px 7px;color:var(--t70);
+}
+
+/* ── SCENE SLIDES ── */
+.scene-slide{background:#ffffff;}
+.scene-slide:nth-child(odd){background:var(--deep);}
+.scene-num{
+  font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--t45);margin-bottom:12px;
+}
+.scene-title{
+  font-family:'DM Serif Display',serif;
+  font-size:clamp(22px,3.5vw,36px);
+  color:#0c1a3a;line-height:1.2;margin-bottom:20px;
+}
+.scene-body{
+  display:grid;
+  grid-template-columns:1fr 1.6fr;
+  gap:28px;align-items:start;
+}
+@media(max-width:768px){.scene-body{grid-template-columns:1fr;}}
+
+/* Role badge block */
+.role-block{
+  background:var(--role-bg,var(--brand-pale));
+  border:1px solid var(--role-border,var(--brand-border));
+  border-radius:14px;padding:20px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.role-avatar{
+  width:52px;height:52px;border-radius:14px;
+  background:var(--role-color,var(--brand));
+  display:flex;align-items:center;justify-content:center;
+  color:#ffffff;font-size:20px;font-weight:700;
+  font-family:'DM Serif Display',serif;flex-shrink:0;
+}
+.role-name{font-size:16px;font-weight:700;color:#1e293b;}
+.role-title{font-size:12px;color:var(--t70);}
+.role-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--role-color,var(--brand));
+  color:#ffffff;border-radius:6px;padding:3px 10px;
+  font-size:11px;font-weight:700;letter-spacing:0.04em;width:fit-content;
+}
+.role-module{
+  font-size:12px;color:var(--t70);
+  display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;
+}
+.role-module span{
+  background:rgba(12,26,58,0.06);border-radius:5px;
+  padding:2px 8px;font-size:11px;font-weight:600;color:#334155;
+}
+.status-box{
+  margin-top:4px;background:#ffffff;
+  border:1px solid var(--role-border,var(--brand-border));
+  border-radius:8px;padding:10px 12px;
+}
+.status-box-label{font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--role-color,var(--brand));margin-bottom:4px;}
+.status-box-val{font-size:13px;font-weight:600;color:#1e293b;}
+.status-box-sub{font-size:11px;color:var(--t70);}
+
+/* Actions block */
+.actions-block{display:flex;flex-direction:column;gap:12px;}
+.action-list{
+  background:#ffffff;border:1px solid rgba(12,26,58,0.08);
+  border-radius:12px;overflow:hidden;
+}
+.action-list-head{
+  background:linear-gradient(90deg,var(--role-bg,var(--brand-pale)),#f8fafc);
+  border-bottom:1px solid rgba(12,26,58,0.07);
+  padding:10px 16px;
+  font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;
+  color:var(--t70);
+}
+.action-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 16px;
+  border-bottom:1px solid rgba(12,26,58,0.05);
+  font-size:13px;color:var(--t90);line-height:1.5;
+}
+.action-item:last-child{border-bottom:none;}
+.action-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--role-color,var(--brand));color:#ffffff;
+  font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:1px;
+}
+.action-text strong{color:#1e293b;}
+
+/* RBAC callout */
+.rbac-callout{
+  background:linear-gradient(135deg,var(--role-bg,var(--brand-pale)),#f8fafc);
+  border:1px solid var(--role-border,var(--brand-border));
+  border-left:4px solid var(--role-color,var(--brand));
+  border-radius:10px;padding:14px 16px;
+  font-size:13px;color:#334155;line-height:1.6;
+}
+.rbac-callout-label{
+  font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;
+  color:var(--role-color,var(--brand));margin-bottom:6px;
+}
+
+/* Handoff divider */
+.handoff{
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;margin:14px 0;font-size:12px;color:var(--t45);
+}
+.handoff-line{flex:1;height:1px;background:var(--t20);}
+
+/* Section label */
+.section-label{
+  font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--brand);margin-bottom:18px;
+}
+
+/* ── SUMMARY SLIDE ── */
+#s_end{background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 50%,#f5f3ff 100%);}
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:14px;margin-top:28px;
+}
+.summary-card{
+  background:#ffffff;border:1px solid var(--brand-border);border-radius:12px;
+  padding:16px;text-align:center;
+}
+.summary-icon{font-size:24px;margin-bottom:8px;}
+.summary-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;}
+.summary-desc{font-size:11px;color:var(--t70);line-height:1.5;}
+
+/* ── ANIMATIONS ── */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity 0.5s ease,transform 0.5s ease;}
+.reveal.visible{opacity:1;transform:none;}
+
+@media print{
+  #nav,#progress-bar{display:none!important;}
+  .slide{min-height:auto;padding:40px;page-break-after:always;}
+  .reveal{opacity:1!important;transform:none!important;}
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- ── NAV ── -->
+<nav id="nav">
+  <div class="nav-brand"><b>DigProf</b> · Defense Demo</div>
+  <div class="nav-dots" id="nav-dots"></div>
+  <div class="nav-kbd">
+    <span class="kbd">◀</span><span class="kbd">▶</span>
+    <span style="margin-left:4px;">navigate</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════ TITLE ══ -->
+<section class="slide" id="s0" data-title="Overview">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="title-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Capstone Defense · December 2025
+      </div>
+      <h1 class="hero-title">
+        Digital Profiling System<br>
+        <span>for Barangay Taruc</span>
+      </h1>
+      <p class="hero-sub">
+        A complete barangay operations day — from resident registration and document issuance to disaster preparedness, GIS mapping, and budget tracking. Six roles, twelve scenes, every action enforced by the system.
+      </p>
+      <div class="stat-row">
+        <div class="stat-pill"><div class="stat-num">14</div><div class="stat-lbl">Modules</div></div>
+        <div class="stat-pill"><div class="stat-num">6</div><div class="stat-lbl">User Roles</div></div>
+        <div class="stat-pill"><div class="stat-num">12</div><div class="stat-lbl">Document Types</div></div>
+        <div class="stat-pill"><div class="stat-num" style="color:#6366f1;">4.46</div><div class="stat-lbl">ISO 9126 Grand Mean</div></div>
+      </div>
+      <p style="font-size:12px;color:var(--t45);margin-top:20px;">
+        Raizy-Maricole C. Joaquino &nbsp;·&nbsp; Rizalyn D. Consigna &nbsp;·&nbsp; Kisha Mae D. Cubillanes<br>
+        Bucas Grande Foundation College · Bachelor of Science in Information Technology · Socorro, Surigao del Norte
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════ ACCOUNTS ══ -->
+<section class="slide" id="s1" data-title="Accounts">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="section-label">Demo Accounts</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(20px,3vw,32px);color:#0c1a3a;margin-bottom:8px;">Cast of Characters</h2>
+      <p style="font-size:14px;color:var(--t70);margin-bottom:4px;">Each login is locked to exactly what their role permits — nothing more, nothing less.</p>
+    </div>
+    <div class="accounts-grid reveal">
+
+      <div class="account-card" style="--role-color:var(--super)">
+        <div class="account-role">Super Admin</div>
+        <div class="account-name">System Administrator</div>
+        <div class="account-login">admin@barangaytaruc.gov.ph</div>
+        <div class="account-pass">password: admin123</div>
+        <div class="account-scope">Full system access</div>
+      </div>
+
+      <div class="account-card" style="--role-color:var(--captain)">
+        <div class="account-role">Barangay Captain</div>
+        <div class="account-name">Punong Barangay</div>
+        <div class="account-login">captain@barangaytaruc.gov.ph</div>
+        <div class="account-pass">password: staff123</div>
+        <div class="account-scope">All modules except user mgmt</div>
+      </div>
+
+      <div class="account-card" style="--role-color:var(--secretary)">
+        <div class="account-role">Barangay Secretary</div>
+        <div class="account-name">Barangay Secretary</div>
+        <div class="account-login">secretary@barangaytaruc.gov.ph</div>
+        <div class="account-pass">password: staff123</div>
+        <div class="account-scope">Residents · Documents · Blotter</div>
+      </div>
+
+      <div class="account-card" style="--role-color:var(--treasurer)">
+        <div class="account-role">Barangay Treasurer</div>
+        <div class="account-name">Barangay Treasurer</div>
+        <div class="account-login">treasurer@barangaytaruc.gov.ph</div>
+        <div class="account-pass">password: staff123</div>
+        <div class="account-scope">Budget · Finance only</div>
+      </div>
+
+    </div>
+    <p style="font-size:12px;color:var(--t45);margin-top:20px;">
+      Additional roles available: <strong>Kagawad</strong> and <strong>SK Chairman</strong> — read access to most modules with role-specific restrictions.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 0 — LOGIN & RBAC ══ -->
+<section class="slide scene-slide" id="sc0" data-title="Login & RBAC" style="background:var(--secretary-bg);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 0 · Authentication</div>
+      <h2 class="scene-title">Login & Role-Based Access Enforcement</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">secretary@barangaytaruc.gov.ph</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Pages: <span>/login</span><span>/dashboard</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          The login page enforces credential-based authentication. Each successful login routes the user to a dashboard filtered by their assigned role — no two roles see the same interface.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Navigate to <strong>/login</strong> → enter <strong>secretary@barangaytaruc.gov.ph</strong> / staff123 → click Sign In</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Redirected to <strong>/dashboard</strong> — sidebar shows only: Residents, Households, Documents, Blotter, Officials, Reports</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Manually type <strong>/budget</strong> in the browser URL bar → middleware intercepts and redirects back to /dashboard with no error page</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">Sign out → log in as <strong>treasurer@barangaytaruc.gov.ph</strong> → sidebar now shows <strong>Budget</strong> module; Residents tab is read-only</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">RBAC in action</div>
+          Each of the 6 roles (Super Admin, Barangay Admin, Captain, Secretary, Treasurer, Kagawad, SK Chairman) receives a uniquely filtered sidebar and dashboard. Permission checks run at <strong>two layers</strong>: Next.js middleware protects page routes, and every API route re-validates the session server-side — bypassing the UI is impossible.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 1 — RESIDENT REGISTRATION ══ -->
+<section class="slide scene-slide" id="sc1" data-title="Resident Registration" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 1 · Community Profiling</div>
+      <h2 class="scene-title">Secretary Registers a New Resident</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">Resident Registration</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Page: <span>/residents/new</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          The resident form includes Philippine-specific fields not found in generic systems: purok assignment, barangay government IDs, indigenous people classification, OFW status, and voter registration.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Click <strong>Add Resident</strong> → multi-section form opens: Personal Info, Government IDs, Classifications, Employment, Household</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Fill: First Name <strong>"Juan"</strong>, Last Name <strong>"Dela Cruz"</strong>, Sex: Male, Date of Birth, Civil Status: Single, Citizenship: Filipino</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Fill Philippine-specific IDs: <strong>PhilHealth No., SSS No., Pag-IBIG No., TIN, National ID No.</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">Check classifications: <strong>Registered Voter</strong>, <strong>4Ps Beneficiary</strong> — corresponding ID fields appear dynamically</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">5</div>
+            <div class="action-text">Assign to Household: select <strong>Purok 3</strong> → filter to <strong>House #12</strong> → set relationship: Son</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">6</div>
+            <div class="action-text">Submit → resident created with unique ID, appears in list with small avatar thumbnail and classification badges</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">RBAC in action</div>
+          Secretary can create and edit residents. Only <strong>Super Admin and Barangay Admin</strong> can bulk-delete or permanently remove records. Resident status defaults to <strong>ACTIVE</strong> — authorized staff can change it to DECEASED or TRANSFERRED to reflect real-life community changes without losing historical data.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 2 — HOUSEHOLD MANAGEMENT ══ -->
+<section class="slide scene-slide" id="sc2" data-title="Household Mgmt">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 2 · Housing Profile</div>
+      <h2 class="scene-title">Household Management &amp; Member Linking</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">Household Records</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Pages: <span>/households</span><span>/households/[id]</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          Households are the geographic unit of the barangay — each one links to a purok, a GPS coordinate (for the map), and a list of residents with their relationship to the household head.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Go to <strong>/households</strong> → card grid shows: house no., purok, member count, household head name</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Click House #12 → detail page shows members table, housing profile: <strong>type, roof material, wall material, water source, toilet facility, GPS, 4Ps status</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Click <strong>Add Member</strong> → search dialog → type <em>"dela cruz"</em> → Juan Dela Cruz appears from the resident database</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">Select relationship <strong>"Son"</strong> → Add → member appears in the household table, member count increments</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">5</div>
+            <div class="action-text">Click the <strong>UserMinus</strong> icon → confirm dialog → member unlinked — <em>resident record is preserved, household link is cleared</em></div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">RBAC in action</div>
+          Adding or removing household members requires <strong>households:update</strong> permission (Secretary, Captain, Super Admin). Deleting an entire household requires <strong>households:delete</strong> (Super Admin and Barangay Admin only) — and only when the household has no active members remaining.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 3 — DOCUMENT REQUEST → PRINT ══ -->
+<section class="slide scene-slide" id="sc3" data-title="Document Request" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 3 · Document Issuance</div>
+      <h2 class="scene-title">Document Request → PDF Generation → Direct Print</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">Document Workflow</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Pages: <span>/documents/new</span><span>/documents</span></div>
+        <div class="status-box" style="--role-color:var(--secretary);--role-border:var(--secretary-border);">
+          <div class="status-box-label">Document Status Flow</div>
+          <div class="status-box-val">PENDING → PROCESSING → READY → RELEASED</div>
+          <div class="status-box-sub">Or: REJECTED / CANCELLED at any step</div>
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Click <strong>New Request</strong> → select document type: <strong>Barangay Clearance</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Search resident: <em>"dela cruz"</em> → live search results appear → select <strong>Juan Dela Cruz</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Enter purpose: <em>"Employment requirement"</em> — system auto-assigns control number <strong>BC-2025-0001</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">Submit → status is <strong>PENDING</strong>. Use the ⋯ dropdown → <strong>Mark Processing</strong> → <strong>Mark Ready</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">5</div>
+            <div class="action-text">Click <strong>Print PDF</strong> in the dropdown → the browser <strong>Print dialog opens directly</strong> — no save button, ready for the printer</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">6</div>
+            <div class="action-text">The generated certificate shows: resident's name, address, purpose, barangay name, captain's name, control number, date — <strong>pre-filled automatically</strong></div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">PDF generation in action</div>
+          PDFs are generated server-side using <strong>pdf-lib</strong>. The system fetches resident data from the database, fills in the certificate template with the correct legal text, assigns a unique control number, and streams the result to an invisible iframe — triggering the OS print dialog directly without a save prompt.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 4 — 12 DOCUMENT TYPES ══ -->
+<section class="slide scene-slide" id="sc4" data-title="12 Document Types">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 4 · Full Document Catalogue</div>
+      <h2 class="scene-title">All 12 Official Document Types</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">Document Catalogue</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Page: <span>/documents/new</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:8px;line-height:1.7;">
+          <strong style="color:#1e293b;">Prefix codes:</strong><br>
+          BC · CI · CR · BP · CGM · BID · FTJS · SPC · CTC · SKC · SCID · PWDID
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">12 Document Types — Open the Dropdown to Show</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text"><strong>Barangay Clearance</strong> · <strong>Certificate of Indigency</strong> · <strong>Certificate of Residency</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text"><strong>Business Permit Endorsement</strong> · <strong>Certificate of Good Moral Character</strong> · <strong>Barangay ID</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text"><strong>First Time Job Seeker Certificate</strong> (RA 11261) · <strong>Solo Parent Certificate</strong> (RA 8972)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text"><strong>Cedula / CTC</strong> (RA 7160) · <strong>SK Certification</strong> (RA 10742)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">5</div>
+            <div class="action-text"><strong>Senior Citizen ID Endorsement</strong> (RA 9994 / OSCA) · <strong>PWD ID Endorsement</strong> (RA 7277 / CSWDO)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">6</div>
+            <div class="action-text">Select <em>Certificate of Indigency</em> → generate → observe <strong>different title, body text, and legal citation</strong> in the PDF vs. Barangay Clearance</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Legal compliance by design</div>
+          Each document type cites the correct Philippine law. Control numbers follow type-specific prefixes (e.g., BC- for Barangay Clearance, CTC- for Cedula) with sequential counters — guaranteeing uniqueness across all requests and providing a complete audit trail per document type.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 5 — BLOTTER ══ -->
+<section class="slide scene-slide" id="sc5" data-title="Blotter" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 5 · Incident Recording</div>
+      <h2 class="scene-title">Captain Files and Tracks a Blotter Case</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--captain);--role-bg:var(--captain-bg);--role-border:var(--captain-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--captain);">C</div>
+          <div>
+            <div class="role-name">Barangay Captain</div>
+            <div class="role-title">Incident Management</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--captain);">captain</div>
+        <div class="role-module">Pages: <span>/blotter/new</span><span>/blotter</span></div>
+        <div class="status-box" style="--role-color:var(--captain);--role-border:var(--captain-border);">
+          <div class="status-box-label">Blotter Status Flow</div>
+          <div class="status-box-val">Filed → Under Mediation → Settled</div>
+          <div class="status-box-sub">Or: Escalated · Closed · Withdrawn</div>
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">1</div>
+            <div class="action-text">Log in as <strong>captain@barangaytaruc.gov.ph</strong> → navigate to <strong>Blotter</strong> in the sidebar</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">2</div>
+            <div class="action-text">Click <strong>New Blotter Entry</strong> → fill: complainant (search resident), respondent (search resident), nature: <em>"Noise disturbance"</em></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">3</div>
+            <div class="action-text">Enter incident details, date and time → submit → case created with status <strong>FILED</strong> and assigned case number</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">4</div>
+            <div class="action-text">Click into the blotter record → add <strong>hearing schedule</strong> with date, time, notes</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">5</div>
+            <div class="action-text">Use status dropdown → <strong>Under Mediation</strong> → dashboard active blotter count increments</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">RBAC in action</div>
+          Blotter entries can be filed by Captain, Secretary, Kagawad, and Super Admin. Only <strong>Captain and Super Admin</strong> can escalate cases to higher authorities or mark them Closed. The dashboard prominently shows the count of <strong>Filed + Under Mediation</strong> cases — keeping officials informed without needing to navigate into the module.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 6 — DISASTER ══ -->
+<section class="slide scene-slide" id="sc6" data-title="Disaster Prep">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 6 · Emergency Management</div>
+      <h2 class="scene-title">Captain Manages a Disaster Event</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--captain);--role-bg:var(--captain-bg);--role-border:var(--captain-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:#dc2626;font-size:22px;">⚠</div>
+          <div>
+            <div class="role-name">Barangay Captain</div>
+            <div class="role-title">Disaster Preparedness Module</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:#dc2626;">disaster active</div>
+        <div class="role-module">Page: <span>/disaster</span><span>/map</span></div>
+        <div class="status-box" style="--role-color:#dc2626;--role-border:#fecaca;">
+          <div class="status-box-label">Event Status Options</div>
+          <div class="status-box-val">ACTIVE · STANDDOWN · DRILL · ENDED</div>
+          <div class="status-box-sub">ACTIVE event links all reports and risk profiles</div>
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">1</div>
+            <div class="action-text">Navigate to <strong>Disaster Preparedness</strong> → click <strong>New Event</strong> → Name: <em>"Typhoon Carina"</em>, Type: Typhoon, Status: <strong>ACTIVE</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">2</div>
+            <div class="action-text">Go to <strong>Household Risk Profiles</strong> tab → Add household → select House #12 (Purok 3) → risk level: <strong>HIGH</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">3</div>
+            <div class="action-text">Click <strong>Mark as Evacuated</strong> → select evacuation center: <em>"Barangay Taruc Multi-Purpose Hall"</em></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">4</div>
+            <div class="action-text">Go to <strong>Missing Persons</strong> tab → report: Juan Dela Cruz, linked to the active Typhoon Carina event</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">5</div>
+            <div class="action-text">Navigate to <strong>/map</strong> (Disaster view) → household pins color-coded: <span style="color:#dc2626;font-weight:700;">RED</span>=HIGH, <span style="color:#d97706;font-weight:700;">AMBER</span>=MEDIUM, <span style="color:#059669;font-weight:700;">GREEN</span>=SAFE — evacuation center markers visible</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Geographic emergency response</div>
+          The disaster module links events, household risk profiles, evacuation centers, and missing persons into one coordinated workflow. When a disaster is set to <strong>ENDED</strong>, all records remain in the database for historical reference and post-disaster analysis — nothing is deleted.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 7 — GIS MAP ══ -->
+<section class="slide scene-slide" id="sc7" data-title="GIS Map" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 7 · Geographic Intelligence</div>
+      <h2 class="scene-title">Interactive GIS Household Map</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--captain);--role-bg:var(--captain-bg);--role-border:var(--captain-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--captain);font-size:22px;">📍</div>
+          <div>
+            <div class="role-name">Barangay Captain</div>
+            <div class="role-title">GIS Household Mapping</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--captain);">captain</div>
+        <div class="role-module">Page: <span>/map</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          All household pin locations come from GPS coordinates recorded in the household profile — the same data used for disaster risk mapping and resource allocation decisions.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">1</div>
+            <div class="action-text">Navigate to <strong>/map</strong> → OpenStreetMap loads, centered on <strong>Barangay Taruc, Socorro, Surigao del Norte</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">2</div>
+            <div class="action-text">Household pins appear at their GPS coordinates — click a pin: popup shows <strong>house no., purok, resident count, head of household</strong></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">3</div>
+            <div class="action-text">Toggle to <strong>Disaster Map</strong> view → pins recolor by risk level; evacuation center markers appear with capacity info</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">4</div>
+            <div class="action-text">Click on an empty map area → <strong>"Add evacuation center here"</strong> button appears → fill name, capacity → center is saved and immediately pinned</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Spatial decision-making</div>
+          The GIS map is read-accessible to Captain, Secretary, Kagawad, and SK Chairman. Only Captain-level and above can add evacuation centers. The map bridges administrative data and physical geography — enabling officials to plan programs, target services, and coordinate emergency response based on actual household locations.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 8 — BUDGET ══ -->
+<section class="slide scene-slide" id="sc8" data-title="Budget & Finance">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 8 · Financial Management</div>
+      <h2 class="scene-title">Treasurer Records Budget &amp; Transactions</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--treasurer);--role-bg:var(--treasurer-bg);--role-border:var(--treasurer-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--treasurer);">T</div>
+          <div>
+            <div class="role-name">Barangay Treasurer</div>
+            <div class="role-title">Budget Management</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--treasurer);">treasurer</div>
+        <div class="role-module">Page: <span>/budget</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          Budget categories follow standard barangay fund classification: Personal Services, MOOE, Capital Outlay, and Trust Fund.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">1</div>
+            <div class="action-text">Log in as <strong>treasurer@barangaytaruc.gov.ph</strong> → navigate to <strong>Budget</strong> in the sidebar</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">2</div>
+            <div class="action-text">Create <strong>Budget Year 2025</strong> → set total allocation: <em>₱1,200,000</em></div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">3</div>
+            <div class="action-text">Add allocations: <strong>Personal Services ₱500,000</strong> · <strong>MOOE ₱300,000</strong> · <strong>Capital Outlay ₱200,000</strong> · Trust Fund ₱200,000</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">4</div>
+            <div class="action-text">Record transaction: <em>"Salaries – January"</em>, category: Personal Services, amount: <strong>₱42,500</strong> → balance updates in real time</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">5</div>
+            <div class="action-text">Sign out → log in as Secretary → type <strong>/budget</strong> manually → redirected with no access — budget module is completely hidden from this role</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">RBAC in action</div>
+          Budget access is restricted to Super Admin, Captain, Secretary, and Treasurer. The budget module provides <strong>internal barangay tracking only</strong> — it is explicitly acknowledged in the capstone paper that this does not replace Commission on Audit (COA) formal reporting. This is a stated and accepted system limitation.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 9 — ANALYTICS DASHBOARD ══ -->
+<section class="slide scene-slide" id="sc9" data-title="Analytics Dashboard" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 9 · Data-Driven Governance</div>
+      <h2 class="scene-title">Captain Reviews the Analytics Dashboard</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--captain);--role-bg:var(--captain-bg);--role-border:var(--captain-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--captain);">C</div>
+          <div>
+            <div class="role-name">Barangay Captain</div>
+            <div class="role-title">Analytics &amp; Overview</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--captain);">captain</div>
+        <div class="role-module">Page: <span>/dashboard</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          The dashboard is the first screen every role sees after login — but each role's stat cards and modules are filtered to what is relevant for their function.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Dashboard Stat Cards (Top Section)</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">1</div>
+            <div class="action-text"><strong>Total Population · Total Households · Male Count · Female Count</strong> — live from the resident database</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">2</div>
+            <div class="action-text"><strong>Senior Citizens · PWD · 4Ps Beneficiaries · Solo Parents · Registered Voters · OFW</strong> — community classification counts</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">3</div>
+            <div class="action-text"><strong>Pending Documents · Active Blotters</strong> — operational alerts requiring attention</div>
+          </div>
+        </div>
+        <div class="action-list" style="margin-top:4px;">
+          <div class="action-list-head">Charts Section</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">4</div>
+            <div class="action-text"><strong>Age Distribution</strong> — grouped bar chart: 0–14, 15–30, 31–59, 60+ split by male/female (Recharts)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--captain);">5</div>
+            <div class="action-text"><strong>Population by Purok</strong> · <strong>Civil Status Distribution</strong> · <strong>Household Risk Levels</strong> (HIGH/MEDIUM/LOW/SAFE)</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Always current, zero manual work</div>
+          All dashboard numbers are computed live from the PostgreSQL database — no periodic reports, no manual data entry, no stale numbers. The Captain can assess the entire community's demographic, service, and safety status in one view without opening a single spreadsheet.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 10 — RESIDENT STATUS ══ -->
+<section class="slide scene-slide" id="sc10" data-title="Resident Status">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 10 · Lifecycle Management</div>
+      <h2 class="scene-title">Resident Status — Deceased &amp; Transferred</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Secretary / Captain</div>
+            <div class="role-title">Resident Lifecycle Tracking</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Pages: <span>/residents</span><span>/residents/[id]/edit</span></div>
+        <div class="status-box" style="--role-color:var(--secretary);--role-border:var(--secretary-border);">
+          <div class="status-box-label">Resident Status Values</div>
+          <div class="status-box-val">ACTIVE · DECEASED · TRANSFERRED · INACTIVE</div>
+          <div class="status-box-sub">Historical records preserved for all statuses</div>
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Go to <strong>/residents</strong> → Status filter defaults to <strong>Active</strong> — list shows all active residents</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Change Status filter to <strong>Deceased</strong> → list refreshes, showing only residents with DECEASED status</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Select Juan Dela Cruz via checkbox → <strong>Update button</strong> appears (beside Delete) → click Update → redirected to edit form</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">In edit form, change <strong>Resident Status</strong> field (below Civil Status) from ACTIVE to <strong>TRANSFERRED</strong> → Save</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">5</div>
+            <div class="action-text">Return to residents list → resident shows an <span style="display:inline;background:#fef3c7;border:1px solid #fbbf24;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;">Transferred</span> badge — Active filter hides them automatically</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Accurate community profiling over time</div>
+          Deceased and Transferred residents remain in the database — historical data is never deleted. They are <strong>automatically excluded</strong> from population count dashboards and document request searches (ACTIVE only), but remain fully accessible via status filter for auditing, historical lookup, and accurate trend analysis.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 11 — USER MANAGEMENT ══ -->
+<section class="slide scene-slide" id="sc11" data-title="User Management" style="background:var(--deep);">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 11 · System Administration</div>
+      <h2 class="scene-title">Super Admin Manages User Accounts</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--super);--role-bg:var(--super-bg);--role-border:var(--super-border);">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--super);">A</div>
+          <div>
+            <div class="role-name">System Administrator</div>
+            <div class="role-title">Super Admin · Full Access</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--super);">super admin</div>
+        <div class="role-module">Page: <span>/settings</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          User management is the only module exclusively reserved for Super Admin and Barangay Admin. No other role can see or access the Settings → User Management tab.
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">1</div>
+            <div class="action-text">Log in as <strong>admin@barangaytaruc.gov.ph</strong> → navigate to <strong>Settings → User Management</strong> tab</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">2</div>
+            <div class="action-text">Table shows all staff accounts: name, email, role badge, active status — with Edit (✏) and Delete (🗑) action buttons</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">3</div>
+            <div class="action-text">Click <strong>Add User</strong> → fill: Name <em>"Maria Reyes"</em>, email, role: <strong>SECRETARY</strong>, assign to Barangay Taruc → Save</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">4</div>
+            <div class="action-text">Click ✏ Edit icon on Maria → change role to <strong>KAGAWAD</strong> → optional: set new password → Save</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">5</div>
+            <div class="action-text">Click 🗑 Delete → confirm dialog → account removed</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">6</div>
+            <div class="action-text">Click the profile <strong>avatar in the top-right</strong> → Profile dialog opens → upload a photo → saved to Cloudinary instantly</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Safeguards in action</div>
+          The system prevents two critical mistakes: (1) <strong>an admin cannot delete their own account</strong>, and (2) <strong>the last active Super Admin cannot be deleted or deactivated</strong> — the API enforces these rules server-side regardless of what is submitted from the UI.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ END SLIDE ══ -->
+<section class="slide" id="s_end" data-title="Summary">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="section-label">What You Just Saw</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(24px,4vw,42px);color:#0c1a3a;margin-bottom:10px;">
+        One Barangay. Six Roles.<br>
+        <span style="background:linear-gradient(135deg,#1e40af,#3b82f6,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Zero Paper. Zero Manual Reports.</span>
+      </h2>
+      <p style="font-size:15px;color:var(--t70);max-width:580px;margin-bottom:32px;line-height:1.6;">
+        Every step — from resident registration and document issuance to disaster response, GIS mapping, budget tracking, and emergency SOS — was enforced by the system. Each role did exactly what their permission allows. Nothing more.
+      </p>
+    </div>
+
+    <!-- Complete trail -->
+    <div style="background:#ffffff;border:1px solid rgba(12,26,58,0.08);border-radius:14px;overflow:hidden;margin-bottom:28px;" class="reveal">
+      <div style="padding:12px 16px;background:var(--deep);border-bottom:1px solid rgba(12,26,58,0.07);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t70);">Complete Operational Trail — 12 Scenes</div>
+      <div class="action-item">
+        <div class="action-num" style="background:var(--secretary);">✓</div>
+        <div class="action-text"><strong>Secretary</strong> — logged in (RBAC enforced), registered Juan Dela Cruz, managed household members, issued Barangay Clearance PDF, showcased all 12 document types, managed resident status (TRANSFERRED)</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num" style="background:var(--captain);">✓</div>
+        <div class="action-text"><strong>Captain</strong> — filed and tracked a blotter case, created Typhoon Carina disaster event, mapped household risk levels, reviewed live analytics dashboard with population charts</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num" style="background:var(--treasurer);">✓</div>
+        <div class="action-text"><strong>Treasurer</strong> — created Budget Year 2025, allocated funds by category, recorded a transaction — Secretary was blocked from this module entirely</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num" style="background:var(--super);">✓</div>
+        <div class="action-text"><strong>Super Admin</strong> — created, edited, and deleted a user account; safeguards prevented self-deletion and last-admin deactivation; uploaded profile photo via Cloudinary</div>
+      </div>
+    </div>
+
+    <div class="summary-grid reveal">
+      <div class="summary-card">
+        <div class="summary-icon">🔐</div>
+        <div class="summary-title">Role Enforcement</div>
+        <div class="summary-desc">6 roles, two-layer enforcement: Next.js middleware + server-side API validation. No bypass possible.</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📄</div>
+        <div class="summary-title">12 Document Types</div>
+        <div class="summary-desc">PDF generated server-side with pdf-lib. Correct legal citations, unique control numbers, direct print to printer.</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📍</div>
+        <div class="summary-title">GIS Household Map</div>
+        <div class="summary-desc">OpenStreetMap with Leaflet. Real GPS coordinates. Disaster risk coloring. Evacuation center management.</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">⚠️</div>
+        <div class="summary-title">Disaster Preparedness</div>
+        <div class="summary-desc">Events, risk profiles, evacuation centers, missing persons — all linked and map-integrated in one module.</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📊</div>
+        <div class="summary-title">Live Dashboard</div>
+        <div class="summary-desc">Population stats, classification counts, age distribution, civil status, and blotter/document alerts — always current.</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">🏆</div>
+        <div class="summary-title">ISO 9126 · 4.46</div>
+        <div class="summary-desc">Evaluated across Functionality, Efficiency, Usability, Reliability, Maintainability, and Portability. Result: Agree.</div>
+      </div>
+    </div>
+
+    <p style="font-size:12px;color:var(--t45);margin-top:28px;text-align:center;">
+      Digital Residents for Pioneering and Information Management System for Barangay Taruc<br>
+      Raizy-Maricole C. Joaquino &nbsp;·&nbsp; Rizalyn D. Consigna &nbsp;·&nbsp; Kisha Mae D. Cubillanes<br>
+      Bucas Grande Foundation College · ISO 9126 Grand Mean <strong>4.46 / 5.00</strong> (Agree)
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCRIPTS ══ -->
+<script>
+const slides = Array.from(document.querySelectorAll('.slide'))
+const dotsContainer = document.getElementById('nav-dots')
+const progressBar = document.getElementById('progress-bar')
+
+slides.forEach((slide, i) => {
+  const dot = document.createElement('button')
+  dot.className = 'nav-dot'
+  dot.title = slide.dataset.title || `Slide ${i+1}`
+  dot.addEventListener('click', () => {
+    slide.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+  dotsContainer.appendChild(dot)
+})
+
+const dots = Array.from(dotsContainer.querySelectorAll('.nav-dot'))
+let activeDot = 0
+
+function updateNav() {
+  const scrollY = window.scrollY
+  const totalH = document.body.scrollHeight - window.innerHeight
+  const pct = totalH > 0 ? (scrollY / totalH) * 100 : 0
+  progressBar.style.width = pct + '%'
+
+  let found = 0
+  slides.forEach((slide, i) => {
+    const rect = slide.getBoundingClientRect()
+    if (rect.top <= window.innerHeight * 0.4) found = i
+  })
+  if (found !== activeDot) {
+    dots[activeDot]?.classList.remove('active')
+    dots[found]?.classList.add('active')
+    activeDot = found
+  }
+}
+
+window.addEventListener('scroll', updateNav, { passive: true })
+updateNav()
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    const next = Math.min(activeDot + 1, slides.length - 1)
+    slides[next].scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    const prev = Math.max(activeDot - 1, 0)
+    slides[prev].scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+})
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible')
+  })
+}, { threshold: 0.12 })
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+</script>
+</body>
+</html>

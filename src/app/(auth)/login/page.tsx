@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Shield, Loader2, Eye, EyeOff } from "lucide-react"
+import { Shield, Loader2, Eye, EyeOff, PlayCircle } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -114,6 +114,17 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+          <div className="mt-4 pt-4 border-t border-border/50 text-center">
+            <a
+              href="/defense-demo-digital-profiling.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+              <PlayCircle className="h-3 w-3" />
+              View defense demo
+            </a>
+          </div>
         </CardContent>
       </Card>
     </div>
