@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  Loader2,
   MoreHorizontal,
   FileDown,
   CheckCircle,
@@ -53,6 +55,7 @@ export function DocumentTable({ documents, page, totalPages, total }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [printing, setPrinting] = useState<string | null>(null)
 
   function goToPage(newPage: number) {
     const params = new URLSearchParams(searchParams.toString())
@@ -75,8 +78,39 @@ export function DocumentTable({ documents, page, totalPages, total }: Props) {
     }
   }
 
-  async function generatePdf(id: string) {
-    window.open(`/api/documents/${id}/generate`, "_blank")
+  async function printPdf(id: string) {
+    setPrinting(id)
+    try {
+      const res = await fetch(`/api/documents/${id}/generate`)
+      if (!res.ok) {
+        toast.error("Failed to generate PDF")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+
+      const iframe = document.createElement("iframe")
+      iframe.style.cssText =
+        "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;"
+      document.body.appendChild(iframe)
+
+      iframe.onload = () => {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+        // Keep the blob URL alive long enough for the print dialog,
+        // then clean up
+        setTimeout(() => {
+          document.body.removeChild(iframe)
+          URL.revokeObjectURL(url)
+        }, 60_000)
+      }
+
+      iframe.src = url
+    } catch {
+      toast.error("Failed to print document")
+    } finally {
+      setPrinting(null)
+    }
   }
 
   return (
@@ -136,9 +170,16 @@ export function DocumentTable({ documents, page, totalPages, total }: Props) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => generatePdf(doc.id)}>
-                          <FileDown className="mr-2 h-4 w-4" />
-                          Generate PDF
+                        <DropdownMenuItem
+                          onClick={() => printPdf(doc.id)}
+                          disabled={printing === doc.id}
+                        >
+                          {printing === doc.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileDown className="mr-2 h-4 w-4" />
+                          )}
+                          {printing === doc.id ? "Preparing..." : "Print PDF"}
                         </DropdownMenuItem>
                         {doc.status === "PENDING" && (
                           <DropdownMenuItem
