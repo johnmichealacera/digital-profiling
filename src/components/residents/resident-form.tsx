@@ -45,6 +45,7 @@ import {
   RELIGIONS,
   PWD_TYPES,
   RELATIONSHIPS_TO_HEAD,
+  RESIDENT_STATUS_LABELS,
 } from "@/lib/constants"
 
 export type ResidentFormBarangayOption = {
@@ -121,6 +122,7 @@ export function ResidentForm({
       sex: "MALE",
       dateOfBirth: "",
       civilStatus: "SINGLE",
+      status: "ACTIVE",
       citizenship: "Filipino",
       voterStatus: false,
       isSeniorCitizen: false,
@@ -341,6 +343,37 @@ export function ResidentForm({
                 </FormItem>
               )}
             />
+            {isEditing && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Resident Status *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? "ACTIVE"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(RESIDENT_STATUS_LABELS).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="citizenship"

@@ -82,6 +82,9 @@ export const residentSchema = z.object({
   // Household
   isHouseholdHead: z.boolean().default(false),
   relationshipToHead: z.string().optional().nullable(),
+
+  // Status (edit only)
+  status: z.enum(["ACTIVE", "DECEASED", "TRANSFERRED", "INACTIVE"]).optional(),
 })
 
 export type ResidentFormData = z.infer<typeof residentSchema>

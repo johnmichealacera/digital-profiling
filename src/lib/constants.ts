@@ -51,6 +51,13 @@ export const COMMON_PURPOSES = [
 
 // ── Civil Status Labels ──────────────────────────────────────────────────────
 
+export const RESIDENT_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Active",
+  DECEASED: "Deceased",
+  TRANSFERRED: "Transferred",
+  INACTIVE: "Inactive",
+}
+
 export const CIVIL_STATUS_LABELS: Record<string, string> = {
   SINGLE: "Single",
   MARRIED: "Married",

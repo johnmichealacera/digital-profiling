@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { ChevronLeft, ChevronRight, Eye, Loader2, Pencil, Trash2 } from "lucide-react"
 import { formatResidentName, computeAge } from "@/lib/utils"
-import { CIVIL_STATUS_LABELS, SEX_LABELS } from "@/lib/constants"
+import { CIVIL_STATUS_LABELS, SEX_LABELS, RESIDENT_STATUS_LABELS } from "@/lib/constants"
 import type { ResidentWithHouseholdClient } from "@/types"
 
 interface Props {
@@ -207,6 +207,15 @@ export function ResidentTable({
                       <Badge variant="outline" className="ml-2 text-xs">
                         Head
                       </Badge>
+                    )}
+                    {resident.status === "DECEASED" && (
+                      <Badge variant="destructive" className="ml-2 text-xs">Deceased</Badge>
+                    )}
+                    {resident.status === "TRANSFERRED" && (
+                      <Badge variant="outline" className="ml-2 text-xs border-amber-500 text-amber-600">Transferred</Badge>
+                    )}
+                    {resident.status === "INACTIVE" && (
+                      <Badge variant="secondary" className="ml-2 text-xs">Inactive</Badge>
                     )}
                   </TableCell>
                   <TableCell>{SEX_LABELS[resident.sex]}</TableCell>

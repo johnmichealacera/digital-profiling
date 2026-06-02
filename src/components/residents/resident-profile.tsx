@@ -26,6 +26,7 @@ import {
   EMPLOYMENT_LABELS,
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_STATUS_LABELS,
+  RESIDENT_STATUS_LABELS,
 } from "@/lib/constants"
 import type { ResidentWithAllClient } from "@/types"
 
@@ -70,8 +71,17 @@ export function ResidentProfile({ resident }: { resident: ResidentWithAllClient 
         </Button>
       </div>
 
-      {/* Classifications */}
+      {/* Status + Classifications */}
       <div className="flex flex-wrap gap-2">
+        {resident.status === "DECEASED" && (
+          <Badge variant="destructive">Deceased</Badge>
+        )}
+        {resident.status === "TRANSFERRED" && (
+          <Badge variant="outline" className="border-amber-500 text-amber-600">Transferred</Badge>
+        )}
+        {resident.status === "INACTIVE" && (
+          <Badge variant="secondary">Inactive</Badge>
+        )}
         {resident.isHouseholdHead && <Badge>Head of Household</Badge>}
         {resident.isSeniorCitizen && (
           <Badge variant="secondary">Senior Citizen</Badge>

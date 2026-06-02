@@ -103,6 +103,21 @@ export function ResidentFilters({ puroks }: { puroks: Purok[] }) {
         </SelectContent>
       </Select>
 
+      <Select
+        value={searchParams.get("status") || "ACTIVE"}
+        onValueChange={(v) => handleFilterChange("status", v === "ACTIVE" ? "" : v)}
+      >
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ACTIVE">Active</SelectItem>
+          <SelectItem value="DECEASED">Deceased</SelectItem>
+          <SelectItem value="TRANSFERRED">Transferred</SelectItem>
+          <SelectItem value="INACTIVE">Inactive</SelectItem>
+        </SelectContent>
+      </Select>
+
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={handleClearFilters}>
           <X className="mr-1 h-4 w-4" />

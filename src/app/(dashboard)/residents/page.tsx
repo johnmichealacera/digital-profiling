@@ -18,6 +18,7 @@ interface Props {
     search?: string
     purokId?: string
     sex?: string
+    status?: string
     isSeniorCitizen?: string
     isPwd?: string
     is4PsBeneficiary?: string
@@ -44,6 +45,7 @@ export default async function ResidentsPage({ searchParams }: Props) {
   const search = params.search || ""
   const purokId = params.purokId || ""
   const sex = params.sex || ""
+  const status = params.status || "ACTIVE"
 
   const andConditions: Prisma.ResidentWhereInput[] = []
 
@@ -82,7 +84,7 @@ export default async function ResidentsPage({ searchParams }: Props) {
   if (params.is4PsBeneficiary === "true") andConditions.push({ is4PsBeneficiary: true })
 
   const where: Prisma.ResidentWhereInput = {
-    status: "ACTIVE",
+    status: status as Prisma.EnumResidentStatusFilter["equals"],
     ...(andConditions.length > 0 ? { AND: andConditions } : {}),
   }
 
