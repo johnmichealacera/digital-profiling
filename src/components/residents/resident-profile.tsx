@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Edit, FileText, User } from "lucide-react"
+import { ResidentPhotoUpload } from "@/components/residents/resident-photo-upload"
 import {
   formatResidentName,
   formatFormalName,
@@ -42,6 +43,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 
 export function ResidentProfile({ resident }: { resident: ResidentWithAllClient }) {
   const age = computeAge(resident.dateOfBirth)
+  const initials = `${resident.firstName[0] ?? ""}${resident.lastName[0] ?? ""}`.toUpperCase()
 
   return (
     <div className="space-y-6">
@@ -53,6 +55,12 @@ export function ResidentProfile({ resident }: { resident: ResidentWithAllClient 
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
+          <ResidentPhotoUpload
+            residentId={resident.id}
+            residentName={formatResidentName(resident)}
+            initials={initials}
+            photoUrl={resident.photoUrl ?? null}
+          />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
               {formatResidentName(resident)}

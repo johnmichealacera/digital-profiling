@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -197,12 +198,26 @@ export function ResidentTable({
                     </TableCell>
                   )}
                   <TableCell className="font-medium">
-                    <Link
-                      href={`/residents/${resident.id}`}
-                      className="hover:underline"
-                    >
-                      {formatResidentName(resident)}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        {resident.photoUrl && (
+                          <AvatarImage
+                            src={resident.photoUrl}
+                            alt={formatResidentName(resident)}
+                            className="object-cover"
+                          />
+                        )}
+                        <AvatarFallback className="text-xs">
+                          {`${resident.firstName[0] ?? ""}${resident.lastName[0] ?? ""}`.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Link
+                        href={`/residents/${resident.id}`}
+                        className="hover:underline"
+                      >
+                        {formatResidentName(resident)}
+                      </Link>
+                    </div>
                     {resident.isHouseholdHead && (
                       <Badge variant="outline" className="ml-2 text-xs">
                         Head

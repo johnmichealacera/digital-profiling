@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { ResidentForm } from "@/components/residents/resident-form"
+import { ResidentPhotoUpload } from "@/components/residents/resident-photo-upload"
 import { format } from "date-fns"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -12,6 +13,7 @@ import {
 } from "@/lib/tenant"
 import { tenantAreaPhraseFromSessionUser } from "@/lib/tenant-area-phrase"
 import type { Prisma } from "@/generated/prisma/client"
+import { Card, CardContent } from "@/components/ui/card"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -74,6 +76,9 @@ export default async function EditResidentPage({ params }: Props) {
 
   const scopeDescription = tenantAreaPhraseFromSessionUser(session?.user ?? {})
 
+  const initials =
+    `${resident.firstName[0] ?? ""}${resident.lastName[0] ?? ""}`.toUpperCase()
+
   return (
     <div className="space-y-6">
       <div>
@@ -82,6 +87,26 @@ export default async function EditResidentPage({ params }: Props) {
           Update information for {resident.firstName} {resident.lastName}
         </p>
       </div>
+
+      <Card>
+        <CardContent className="flex items-center gap-4 pt-6">
+          <ResidentPhotoUpload
+            residentId={id}
+            residentName={`${resident.firstName} ${resident.lastName}`}
+            initials={initials}
+            photoUrl={resident.photoUrl ?? null}
+          />
+          <div>
+            <p className="font-medium">
+              {resident.firstName} {resident.lastName}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Click the photo to upload or change the profile picture
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <ResidentForm
         barangays={barangays}
         puroks={puroks}
