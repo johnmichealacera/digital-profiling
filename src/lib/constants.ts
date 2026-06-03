@@ -250,3 +250,43 @@ export const BARANGAY_INFO = {
 /** Fallback map center when tenant has no map coordinates (see session / barangay settings). */
 export const MAP_CENTER: [number, number] = [9.6215, 125.9589]
 export const MAP_DEFAULT_ZOOM = 15
+
+// ── Ayuda Labels ──────────────────────────────────────────────────────────────
+
+export const AYUDA_TYPE_LABELS: Record<string, string> = {
+  CASH: "Cash Assistance",
+  FOOD_PACK: "Food Pack / Relief Goods",
+  MEDICAL: "Medical Assistance",
+  EDUCATIONAL: "Educational Assistance",
+  LIVELIHOOD: "Livelihood Pack",
+  CALAMITY_RELIEF: "Calamity Relief",
+  SENIOR_CITIZEN: "Senior Citizen Assistance",
+  PWD_ASSISTANCE: "PWD Assistance",
+  SOLO_PARENT: "Solo Parent Assistance",
+  SCHOLARSHIP: "Scholarship",
+  OTHER: "Other",
+}
+
+export const AYUDA_STATUS_LABELS: Record<string, string> = {
+  PLANNED: "Planned",
+  ONGOING: "Ongoing",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+}
+
+export const AYUDA_SOURCE_LABELS: Record<string, string> = {
+  BARANGAY_FUND: "Barangay Fund",
+  MUNICIPAL_FUND: "Municipal Fund",
+  PROVINCIAL_FUND: "Provincial Fund",
+  NATIONAL_FUND: "National Fund",
+  DSWD: "DSWD",
+  NGO: "NGO / Private",
+  OTHER: "Other",
+}
+
+export const AYUDA_DISTRIBUTION_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  CLAIMED: "Claimed",
+  UNCLAIMED: "Unclaimed",
+  RETURNED: "Returned",
+}

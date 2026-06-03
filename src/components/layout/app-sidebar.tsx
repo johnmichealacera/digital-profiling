@@ -20,6 +20,7 @@ import {
   UserCog,
   Settings,
   Building2,
+  HandHeart,
 } from "lucide-react"
 import {
   Sidebar,
@@ -113,6 +114,19 @@ const NAVIGATION = [
           "CAPTAIN",
           "SECRETARY",
           "KAGAWAD",
+        ] as UserRole[],
+      },
+      {
+        name: "Ayuda",
+        href: "/ayuda",
+        icon: HandHeart,
+        roles: [
+          "SUPER_ADMIN",
+          "BARANGAY_ADMIN",
+          "CAPTAIN",
+          "SECRETARY",
+          "KAGAWAD",
+          "TREASURER",
         ] as UserRole[],
       },
     ],

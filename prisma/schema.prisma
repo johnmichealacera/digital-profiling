@@ -154,6 +154,44 @@ enum DisasterEventStatus {
   ENDED
 }
 
+enum AyudaType {
+  CASH
+  FOOD_PACK
+  MEDICAL
+  EDUCATIONAL
+  LIVELIHOOD
+  CALAMITY_RELIEF
+  SENIOR_CITIZEN
+  PWD_ASSISTANCE
+  SOLO_PARENT
+  SCHOLARSHIP
+  OTHER
+}
+
+enum AyudaStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum AyudaSource {
+  BARANGAY_FUND
+  MUNICIPAL_FUND
+  PROVINCIAL_FUND
+  NATIONAL_FUND
+  DSWD
+  NGO
+  OTHER
+}
+
+enum AyudaDistributionStatus {
+  PENDING
+  CLAIMED
+  UNCLAIMED
+  RETURNED
+}
+
 // =============================================================================
 // AUTH MODELS
 // =============================================================================
@@ -189,6 +227,8 @@ model User {
   blottersResolved Blotter[]         @relation("ResolvedBy")
   budgetEntries    BudgetTransaction[]
   projectsCreated  Project[]
+  ayudaCreated     AyudaProgram[]      @relation("AyudaCreatedBy")
+  ayudaEncoded     AyudaDistribution[] @relation("AyudaEncodedBy")
 
   @@index([barangayId])
   @@index([municipalityId])
@@ -285,7 +325,9 @@ model Barangay {
   projects          Project[]
   disasterEvents    DisasterEvent[]
   evacuationCenters EvacuationCenter[]
-  scopedResidents  Resident[]          @relation("ResidentBarangayScope")
+  scopedResidents    Resident[]            @relation("ResidentBarangayScope")
+  ayudaPrograms      AyudaProgram[]
+  ayudaDistributions AyudaDistribution[]   @relation("BarangayAyuda")
 
   @@unique([municipalityId, name])
   @@map("barangays")
@@ -423,6 +465,7 @@ model Resident {
   barangay               Barangay?         @relation("ResidentBarangayScope", fields: [barangayId], references: [id], onDelete: SetNull)
   documentRequests       DocumentRequest[]
   healthRecords          HealthRecord[]
+  ayudaDistributions     AyudaDistribution[] @relation("ResidentAyuda")
   blottersAsComplainant  Blotter[]         @relation("Complainant")
   blottersAsRespondent   Blotter[]         @relation("Respondent")
   missingPersonReports   MissingPersonReport[]
@@ -872,4 +915,60 @@ model SystemSettings {
   updatedAt   DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+// =============================================================================
+// AYUDA (GOVERNMENT AID & ASSISTANCE)
+// =============================================================================
+
+model AyudaProgram {
+  id          String      @id @default(cuid())
+  barangayId  String
+  name        String
+  type        AyudaType
+  source      AyudaSource @default(BARANGAY_FUND)
+  description String?
+  totalBudget Decimal?    @db.Decimal(12, 2)
+  status      AyudaStatus @default(PLANNED)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  barangay      Barangay            @relation(fields: [barangayId], references: [id], onDelete: Cascade)
+  createdBy     User?               @relation("AyudaCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  distributions AyudaDistribution[]
+
+  @@index([barangayId])
+  @@map("ayuda_programs")
+}
+
+model AyudaDistribution {
+  id             String                  @id @default(cuid())
+  ayudaProgramId String
+  residentId     String
+  barangayId     String
+  amount         Decimal?                @db.Decimal(12, 2)
+  items          String?
+  quantity       Decimal?                @db.Decimal(10, 2)
+  unit           String?
+  status         AyudaDistributionStatus @default(PENDING)
+  claimedAt      DateTime?
+  claimedByName  String?
+  remarks        String?
+  encodedById    String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  program   AyudaProgram @relation(fields: [ayudaProgramId], references: [id], onDelete: Cascade)
+  resident  Resident     @relation("ResidentAyuda", fields: [residentId], references: [id])
+  barangay  Barangay     @relation("BarangayAyuda", fields: [barangayId], references: [id])
+  encodedBy User?        @relation("AyudaEncodedBy", fields: [encodedById], references: [id], onDelete: SetNull)
+
+  @@unique([ayudaProgramId, residentId])
+  @@index([ayudaProgramId])
+  @@index([residentId])
+  @@index([barangayId])
+  @@map("ayuda_distributions")
 }
