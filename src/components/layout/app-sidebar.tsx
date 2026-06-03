@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
 import {
@@ -18,7 +19,6 @@ import {
   BarChart3,
   UserCog,
   Settings,
-  Shield,
   Building2,
 } from "lucide-react"
 import {
@@ -220,8 +220,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Shield className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg overflow-hidden bg-white ring-1 ring-border">
+            <Image
+              src="/socorro_logo.png"
+              alt="Socorro logo"
+              width={36}
+              height={36}
+              className="object-contain"
+            />
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-semibold truncate">

@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, UserCircle } from "lucide-react"
+import { ChevronDown, LogOut, UserCircle } from "lucide-react"
 import { USER_ROLE_LABELS } from "@/lib/constants"
 import { UserProfileDialog } from "@/components/layout/user-profile-dialog"
 
@@ -44,13 +44,22 @@ export function Topbar() {
         <div className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-14 w-14 rounded-full p-0">
-              <Avatar className="h-14 w-14">
+            <Button variant="ghost" className="flex items-center gap-2.5 h-12 px-3 rounded-xl">
+              <Avatar className="h-9 w-9 shrink-0">
                 {avatarUrl && (
                   <AvatarImage src={avatarUrl} alt={session?.user?.name ?? ""} className="object-cover" />
                 )}
-                <AvatarFallback className="text-base font-semibold">{initials}</AvatarFallback>
+                <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
               </Avatar>
+              <div className="flex flex-col items-start min-w-0 max-w-[140px]">
+                <span className="text-sm font-medium leading-tight truncate w-full">
+                  {session?.user?.name ?? "User"}
+                </span>
+                <span className="text-xs text-muted-foreground leading-tight truncate w-full">
+                  {USER_ROLE_LABELS[session?.user?.role ?? ""] ?? session?.user?.role}
+                </span>
+              </div>
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">

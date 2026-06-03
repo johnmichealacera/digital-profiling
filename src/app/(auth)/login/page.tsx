@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Shield, Loader2, Eye, EyeOff, PlayCircle } from "lucide-react"
+import { Loader2, Eye, EyeOff, PlayCircle } from "lucide-react"
+import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -48,8 +49,14 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-8 w-8 text-primary" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full overflow-hidden bg-white ring-1 ring-border shadow-sm">
+            <Image
+              src="/socorro_logo.png"
+              alt="Socorro logo"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold">
