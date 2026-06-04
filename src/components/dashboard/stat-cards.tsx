@@ -33,9 +33,9 @@ type Stats = {
 export function DashboardStatCards({ stats }: { stats: Stats }) {
   const cards = [
     {
-      title: "Total Population",
+      title: "Active Residents",
       value: stats.totalPopulation,
-      description: `${stats.maleCount} Male / ${stats.femaleCount} Female`,
+      description: `${stats.maleCount} Male / ${stats.femaleCount} Female · excludes deceased & transferred`,
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50",

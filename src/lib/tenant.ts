@@ -68,6 +68,16 @@ export function residentWhereForTenant(
   }
 }
 
+/** Tenant scope plus ACTIVE only (excludes DECEASED, TRANSFERRED, INACTIVE). */
+export function activeResidentWhereForTenant(
+  tenantIds: string[] | null
+): Prisma.ResidentWhereInput {
+  return {
+    ...residentWhereForTenant(tenantIds),
+    status: "ACTIVE",
+  }
+}
+
 export function purokWhereForTenant(
   tenantIds: string[] | null
 ): Prisma.PurokWhereInput {

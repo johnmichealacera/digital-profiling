@@ -7,7 +7,7 @@ import {
   barangayIdFilter,
   getTenantBarangayIds,
   householdWhereForTenant,
-  residentWhereForTenant,
+  activeResidentWhereForTenant,
 } from "@/lib/tenant"
 
 export async function GET(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   }
 
   const tenantIds = await getTenantBarangayIds(session)
-  const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
+  const rWhere = activeResidentWhereForTenant(tenantIds)
   const hhWhere = householdWhereForTenant(tenantIds)
   const ecBarangay = barangayIdFilter(tenantIds)
 
@@ -93,7 +93,10 @@ export async function GET(req: NextRequest) {
       prisma.household.count({ where: hhWhere }),
       prisma.household.findMany({
         where: hhWhere,
-        select: { purok: { select: { name: true } }, _count: { select: { residents: true } } },
+        select: {
+          purok: { select: { name: true } },
+          _count: { select: { residents: { where: { status: "ACTIVE" } } } },
+        },
       }),
       prisma.household.count({ where: { ...hhWhere, is4PsBeneficiary: true } }),
     ])
@@ -115,12 +118,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (type === "disaster") {
-    const missResFilter = residentWhereForTenant(tenantIds)
     const missingReportWhere: Prisma.MissingPersonReportWhereInput = {
       foundAt: null,
-      ...(Object.keys(missResFilter).length > 0
-        ? { resident: { is: missResFilter } }
-        : {}),
+      resident: { is: rWhere },
     }
 
     const [profiles, evacuationCentersRaw, riskCounts, missingCount, missingList] =
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
                 id: true,
                 houseNo: true,
                 purok: { select: { name: true } },
-                _count: { select: { residents: true } },
+                _count: { select: { residents: { where: { status: "ACTIVE" } } } },
               },
             },
             evacuationCenterRef: { select: { id: true, name: true } },
@@ -150,7 +150,11 @@ export async function GET(req: NextRequest) {
             evacuatedProfiles: {
               where: { evacuatedAt: { not: null } },
               include: {
-                household: { select: { _count: { select: { residents: true } } } },
+                household: {
+                  select: {
+                    _count: { select: { residents: { where: { status: "ACTIVE" } } } },
+                  },
+                },
               },
             },
           },

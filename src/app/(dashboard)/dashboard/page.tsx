@@ -16,20 +16,19 @@ import {
   getTenantBarangayIds,
   householdWhereForTenant,
   purokWhereForTenant,
-  residentWhereForTenant,
+  activeResidentWhereForTenant,
 } from "@/lib/tenant"
 import { sortOfficialsForScope } from "@/lib/official-rank"
 import { DashboardLeadership } from "@/components/dashboard/dashboard-leadership"
 
 async function getDashboardData(tenantIds: string[] | null) {
-  const rWhere = { status: "ACTIVE" as const, ...residentWhereForTenant(tenantIds) }
+  const rWhere = activeResidentWhereForTenant(tenantIds)
   const hhWhere = householdWhereForTenant(tenantIds)
   const purokWhere = purokWhereForTenant(tenantIds)
   const barangayFilter = barangayIdFilter(tenantIds)
-  const missRes = residentWhereForTenant(tenantIds)
   const missingWhere: Prisma.MissingPersonReportWhereInput = {
     foundAt: null,
-    ...(Object.keys(missRes).length > 0 ? { resident: { is: missRes } } : {}),
+    resident: { is: rWhere },
   }
 
   const [
@@ -93,7 +92,14 @@ async function getDashboardData(tenantIds: string[] | null) {
         household: { is: hhWhere },
       },
       include: {
-        household: { select: { _count: { select: { residents: true } } } },
+        household: {
+          select: {
+            residents: {
+              where: { status: "ACTIVE" },
+              select: { id: true },
+            },
+          },
+        },
       },
     }),
     prisma.disasterEvent.findFirst({
@@ -169,7 +175,7 @@ async function getDashboardData(tenantIds: string[] | null) {
   }))
 
   const totalEvacuated = evacuatedProfiles.reduce(
-    (sum, p) => sum + p.household._count.residents,
+    (sum, p) => sum + p.household.residents.length,
     0
   )
 
