@@ -32,6 +32,9 @@
   --treasurer:#d97706;
   --treasurer-bg:#fffbeb;
   --treasurer-border:#fde68a;
+  --brgyadmin:#0891b2;
+  --brgyadmin-bg:#ecfeff;
+  --brgyadmin-border:#a5f3fc;
   --public:#64748b;
   --public-bg:#f8fafc;
   --public-border:#e2e8f0;
@@ -333,11 +336,11 @@ body{
         <span>for Barangay Taruc</span>
       </h1>
       <p class="hero-sub">
-        A complete barangay operations day — from resident registration and document issuance to disaster preparedness, GIS mapping, and budget tracking. Six roles, twelve scenes, every action enforced by the system.
+        A complete barangay operations day — from resident registration, Excel import, and ayuda distribution to disaster preparedness, GIS mapping, and budget tracking. Seven roles, fourteen live-demo scenes, every action enforced by the system.
       </p>
       <div class="stat-row">
-        <div class="stat-pill"><div class="stat-num">14</div><div class="stat-lbl">Modules</div></div>
-        <div class="stat-pill"><div class="stat-num">6</div><div class="stat-lbl">User Roles</div></div>
+        <div class="stat-pill"><div class="stat-num">15</div><div class="stat-lbl">Modules</div></div>
+        <div class="stat-pill"><div class="stat-num">7</div><div class="stat-lbl">User Roles</div></div>
         <div class="stat-pill"><div class="stat-num">12</div><div class="stat-lbl">Document Types</div></div>
         <div class="stat-pill"><div class="stat-num" style="color:#6366f1;">4.46</div><div class="stat-lbl">ISO 9126 Grand Mean</div></div>
       </div>
@@ -364,36 +367,44 @@ body{
         <div class="account-name">System Administrator</div>
         <div class="account-login">admin@barangaytaruc.gov.ph</div>
         <div class="account-pass">password: admin123</div>
-        <div class="account-scope">Full system access</div>
+        <div class="account-scope">All barangays · full access</div>
+      </div>
+
+      <div class="account-card" style="--role-color:var(--brgyadmin)">
+        <div class="account-role">Barangay Admin</div>
+        <div class="account-name">Barangay Taruc Administrator</div>
+        <div class="account-login">brgyAdmin@barangaytaruc.gov.ph</div>
+        <div class="account-pass">password: brgy123</div>
+        <div class="account-scope">Taruc only · users + all ops</div>
       </div>
 
       <div class="account-card" style="--role-color:var(--captain)">
         <div class="account-role">Barangay Captain</div>
-        <div class="account-name">Punong Barangay</div>
+        <div class="account-name">Roberto M. Santos</div>
         <div class="account-login">captain@barangaytaruc.gov.ph</div>
         <div class="account-pass">password: staff123</div>
-        <div class="account-scope">All modules except user mgmt</div>
+        <div class="account-scope">Full barangay ops · no user mgmt</div>
       </div>
 
       <div class="account-card" style="--role-color:var(--secretary)">
         <div class="account-role">Barangay Secretary</div>
-        <div class="account-name">Barangay Secretary</div>
+        <div class="account-name">Maria Clara L. Reyes</div>
         <div class="account-login">secretary@barangaytaruc.gov.ph</div>
         <div class="account-pass">password: staff123</div>
-        <div class="account-scope">Residents · Documents · Blotter</div>
+        <div class="account-scope">Residents · Docs · Ayuda · Import</div>
       </div>
 
       <div class="account-card" style="--role-color:var(--treasurer)">
         <div class="account-role">Barangay Treasurer</div>
-        <div class="account-name">Barangay Treasurer</div>
+        <div class="account-name">Jose R. Dela Cruz</div>
         <div class="account-login">treasurer@barangaytaruc.gov.ph</div>
         <div class="account-pass">password: staff123</div>
-        <div class="account-scope">Budget · Finance only</div>
+        <div class="account-scope">Budget · Ayuda (view) · Reports</div>
       </div>
 
     </div>
     <p style="font-size:12px;color:var(--t45);margin-top:20px;">
-      Additional roles available: <strong>Kagawad</strong> and <strong>SK Chairman</strong> — read access to most modules with role-specific restrictions.
+      Additional roles: <strong>Kagawad</strong> (residents, blotter, ayuda, map) and <strong>SK Chairman</strong> (residents, health, map) — each with role-specific sidebar visibility.
     </p>
   </div>
 </section>
@@ -429,20 +440,24 @@ body{
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--secretary);">2</div>
-            <div class="action-text">Redirected to <strong>/dashboard</strong> — sidebar shows only: Residents, Households, Documents, Blotter, Officials, Reports</div>
+            <div class="action-text">Redirected to <strong>/dashboard</strong> — sidebar shows Profiling (Residents, Households, Map), Services (Documents, Blotter, <strong>Ayuda</strong>), Health &amp; Safety, Management, and Reports</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--secretary);">3</div>
-            <div class="action-text">Manually type <strong>/budget</strong> in the browser URL bar → middleware intercepts and redirects back to /dashboard with no error page</div>
+            <div class="action-text">Manually type <strong>/settings/users</strong> in the URL bar → middleware blocks access (Secretary cannot open user management)</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--secretary);">4</div>
-            <div class="action-text">Sign out → log in as <strong>treasurer@barangaytaruc.gov.ph</strong> → sidebar now shows <strong>Budget</strong> module; Residents tab is read-only</div>
+            <div class="action-text">Sign out → log in as <strong>treasurer@barangaytaruc.gov.ph</strong> → sidebar shows only <strong>Dashboard, Budget, Ayuda, Map, Reports</strong> — no Residents or Documents</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--brgyadmin);">5</div>
+            <div class="action-text">Sign out → log in as <strong>brgyAdmin@barangaytaruc.gov.ph</strong> → full Taruc operations plus <strong>User Management</strong> and <strong>Puroks</strong> under System</div>
           </div>
         </div>
         <div class="rbac-callout">
           <div class="rbac-callout-label">RBAC in action</div>
-          Each of the 6 roles (Super Admin, Barangay Admin, Captain, Secretary, Treasurer, Kagawad, SK Chairman) receives a uniquely filtered sidebar and dashboard. Permission checks run at <strong>two layers</strong>: Next.js middleware protects page routes, and every API route re-validates the session server-side — bypassing the UI is impossible.
+          Seven roles (Super Admin, Barangay Admin, Captain, Secretary, Treasurer, Kagawad, SK Chairman) each receive a uniquely filtered sidebar. Permission checks run at <strong>two layers</strong>: Next.js middleware on page routes, and server-side validation on every API call — bypassing the UI is impossible.
         </div>
       </div>
     </div>
@@ -496,12 +511,20 @@ body{
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--secretary);">6</div>
-            <div class="action-text">Submit → resident created with unique ID, appears in list with small avatar thumbnail and classification badges</div>
+            <div class="action-text">Submit → resident created with unique ID, appears in list with avatar thumbnail and classification badges</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">7</div>
+            <div class="action-text">As <strong>Super Admin</strong>: click <strong>Import Excel</strong> → select barangay <strong>Taruc</strong> → upload template → review import result (created / failed rows with duplicate details)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--super);">8</div>
+            <div class="action-text">Household columns may be left blank — residents import as <strong>unassigned</strong> but remain scoped to the selected barangay; duplicate name + birth date + sex is blocked</div>
           </div>
         </div>
         <div class="rbac-callout">
           <div class="rbac-callout-label">RBAC in action</div>
-          Secretary can create and edit residents. Only <strong>Super Admin and Barangay Admin</strong> can bulk-delete or permanently remove records. Resident status defaults to <strong>ACTIVE</strong> — authorized staff can change it to DECEASED or TRANSFERRED to reflect real-life community changes without losing historical data.
+          Secretary and Captain create/edit residents. <strong>Super Admin and Barangay Admin</strong> may bulk-remove selections after <strong>password confirmation</strong> (records become INACTIVE, not hard-deleted). Status defaults to <strong>ACTIVE</strong>; staff may set DECEASED, TRANSFERRED, or INACTIVE for lifecycle changes while preserving history.
         </div>
       </div>
     </div>
@@ -931,7 +954,7 @@ body{
           <div class="action-list-head">Dashboard Stat Cards (Top Section)</div>
           <div class="action-item">
             <div class="action-num" style="background:var(--captain);">1</div>
-            <div class="action-text"><strong>Total Population · Total Households · Male Count · Female Count</strong> — live from the resident database</div>
+            <div class="action-text"><strong>Active Residents · Households · Male / Female split</strong> — counts only <strong>ACTIVE</strong> residents (deceased &amp; transferred excluded)</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--captain);">2</div>
@@ -955,18 +978,78 @@ body{
         </div>
         <div class="rbac-callout">
           <div class="rbac-callout-label">Always current, zero manual work</div>
-          All dashboard numbers are computed live from the PostgreSQL database — no periodic reports, no manual data entry, no stale numbers. The Captain can assess the entire community's demographic, service, and safety status in one view without opening a single spreadsheet.
+          All dashboard numbers are computed live from PostgreSQL — no manual tallying. Population and classification metrics use <strong>active residents only</strong>; evacuated household counts likewise use active members only.
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ SCENE 10 — RESIDENT STATUS ══ -->
-<section class="slide scene-slide" id="sc10" data-title="Resident Status">
+<!-- ══════════════════════════════════════════════ SCENE 10 — AYUDA ══ -->
+<section class="slide scene-slide" id="sc10" data-title="Ayuda Programs" style="background:#fff7ed;">
   <div class="slide-inner">
     <div class="reveal">
-      <div class="scene-num">Scene 10 · Lifecycle Management</div>
+      <div class="scene-num">Scene 10 · Government Aid</div>
+      <h2 class="scene-title">Ayuda Program &amp; Beneficiary Distribution</h2>
+    </div>
+    <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:#fff7ed;--role-border:#fed7aa;">
+      <div class="role-block">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="role-avatar" style="background:var(--secretary);">S</div>
+          <div>
+            <div class="role-name">Barangay Secretary</div>
+            <div class="role-title">Aid Distribution Tracking</div>
+          </div>
+        </div>
+        <div class="role-badge" style="background:var(--secretary);">secretary</div>
+        <div class="role-module">Pages: <span>/ayuda</span><span>/ayuda/new</span><span>/ayuda/[id]</span></div>
+        <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
+          Tracks SAP-style programs, calamity relief, food packs, and other assistance — who received aid, how much, and whether they claimed it.
+        </div>
+        <div class="status-box" style="--role-color:#ea580c;--role-border:#fed7aa;">
+          <div class="status-box-label">Distribution Status</div>
+          <div class="status-box-val">PENDING → CLAIMED · UNCLAIMED · RETURNED</div>
+          <div class="status-box-sub">Program status: PLANNED · ONGOING · COMPLETED · CANCELLED</div>
+        </div>
+      </div>
+      <div class="actions-block">
+        <div class="action-list">
+          <div class="action-list-head">Actions</div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">1</div>
+            <div class="action-text">Open <strong>Ayuda</strong> → summary cards show Total Programs, Ongoing, Beneficiaries, and Claimed counts</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">2</div>
+            <div class="action-text">Click <strong>New Program</strong> → Name: <em>"Typhoon Relief Cash Aid"</em>, Type: Calamity Relief, Source: Barangay Fund, Status: <strong>ONGOING</strong>, optional budget and dates</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">3</div>
+            <div class="action-text">Open program detail → <strong>Add Beneficiary</strong> → search resident by name → set amount (₱) or items/quantity → save</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--secretary);">4</div>
+            <div class="action-text">Update row status to <strong>CLAIMED</strong> → enter <em>Received by</em> name → claim date recorded automatically; progress bar updates</div>
+          </div>
+          <div class="action-item">
+            <div class="action-num" style="background:var(--treasurer);">5</div>
+            <div class="action-text">Log in as <strong>Treasurer</strong> → can view programs and beneficiary lists for oversight but cannot create programs or add beneficiaries</div>
+          </div>
+        </div>
+        <div class="rbac-callout">
+          <div class="rbac-callout-label">Business rules</div>
+          Each resident may appear <strong>only once per program</strong>. Programs are scoped to the user's barangay. Super Admin selects the target barangay when creating a program. Deleting a program cascades all distribution rows.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════ SCENE 11 — RESIDENT STATUS ══ -->
+<section class="slide scene-slide" id="sc11" data-title="Resident Status">
+  <div class="slide-inner">
+    <div class="reveal">
+      <div class="scene-num">Scene 11 · Lifecycle Management</div>
       <h2 class="scene-title">Resident Status — Deceased &amp; Transferred</h2>
     </div>
     <div class="scene-body reveal" style="--role-color:var(--secretary);--role-bg:var(--secretary-bg);--role-border:var(--secretary-border);">
@@ -1019,12 +1102,12 @@ body{
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════ SCENE 11 — USER MANAGEMENT ══ -->
-<section class="slide scene-slide" id="sc11" data-title="User Management" style="background:var(--deep);">
+<!-- ══════════════════════════════════════════════ SCENE 12 — USER MANAGEMENT ══ -->
+<section class="slide scene-slide" id="sc12" data-title="User Management" style="background:var(--deep);">
   <div class="slide-inner">
     <div class="reveal">
-      <div class="scene-num">Scene 11 · System Administration</div>
-      <h2 class="scene-title">Super Admin Manages User Accounts</h2>
+      <div class="scene-num">Scene 12 · System Administration</div>
+      <h2 class="scene-title">User, Purok &amp; Barangay Settings</h2>
     </div>
     <div class="scene-body reveal" style="--role-color:var(--super);--role-bg:var(--super-bg);--role-border:var(--super-border);">
       <div class="role-block">
@@ -1036,9 +1119,9 @@ body{
           </div>
         </div>
         <div class="role-badge" style="background:var(--super);">super admin</div>
-        <div class="role-module">Page: <span>/settings</span></div>
+        <div class="role-module">Pages: <span>/settings/users</span><span>/settings/puroks</span><span>/settings/barangays</span></div>
         <div style="font-size:12px;color:var(--t70);margin-top:6px;line-height:1.5;">
-          User management is the only module exclusively reserved for Super Admin and Barangay Admin. No other role can see or access the Settings → User Management tab.
+          <strong>User Management</strong> and <strong>Barangays</strong> (multi-barangay registry) are for Super Admin and Barangay Admin. <strong>Puroks</strong> may also be managed by Captain and Secretary for their barangay.
         </div>
       </div>
       <div class="actions-block">
@@ -1046,32 +1129,32 @@ body{
           <div class="action-list-head">Actions</div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">1</div>
-            <div class="action-text">Log in as <strong>admin@barangaytaruc.gov.ph</strong> → navigate to <strong>Settings → User Management</strong> tab</div>
+            <div class="action-text">Log in as <strong>admin@barangaytaruc.gov.ph</strong> → sidebar <strong>System</strong> → <strong>User Management</strong> (<span>/settings/users</span>)</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">2</div>
-            <div class="action-text">Table shows all staff accounts: name, email, role badge, active status — with Edit (✏) and Delete (🗑) action buttons</div>
+            <div class="action-text">Accounts table: name, email, role, access scope (barangay or municipality), active status</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">3</div>
-            <div class="action-text">Click <strong>Add User</strong> → fill: Name <em>"Maria Reyes"</em>, email, role: <strong>SECRETARY</strong>, assign to Barangay Taruc → Save</div>
+            <div class="action-text">Click <strong>Create account</strong> → access scope <strong>Single barangay</strong> → select <strong>Taruc</strong>, role <strong>SECRETARY</strong>, temporary password → Save</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">4</div>
-            <div class="action-text">Click ✏ Edit icon on Maria → change role to <strong>KAGAWAD</strong> → optional: set new password → Save</div>
+            <div class="action-text">Open <strong>Puroks</strong> (<span>/settings/puroks</span>) → add or edit purok name/description; delete blocked if households still use that purok</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">5</div>
-            <div class="action-text">Click 🗑 Delete → confirm dialog → account removed</div>
+            <div class="action-text">Open <strong>Barangays</strong> (<span>/settings/barangays</span>, Super Admin only) → manage barangay registry for multi-site deployment</div>
           </div>
           <div class="action-item">
             <div class="action-num" style="background:var(--super);">6</div>
-            <div class="action-text">Click the profile <strong>avatar in the top-right</strong> → Profile dialog opens → upload a photo → saved to Cloudinary instantly</div>
+            <div class="action-text">Profile menu (top-right) → upload staff photo → stored via Cloudinary</div>
           </div>
         </div>
         <div class="rbac-callout">
           <div class="rbac-callout-label">Safeguards in action</div>
-          The system prevents two critical mistakes: (1) <strong>an admin cannot delete their own account</strong>, and (2) <strong>the last active Super Admin cannot be deleted or deactivated</strong> — the API enforces these rules server-side regardless of what is submitted from the UI.
+          Users cannot delete their own account. The <strong>last active Super Admin</strong> cannot be deleted or demoted. Puroks with assigned households cannot be deleted. Passwords are never shown in plain text on edit forms.
         </div>
       </div>
     </div>
@@ -1088,36 +1171,45 @@ body{
         <span style="background:linear-gradient(135deg,#1e40af,#3b82f6,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Zero Paper. Zero Manual Reports.</span>
       </h2>
       <p style="font-size:15px;color:var(--t70);max-width:580px;margin-bottom:32px;line-height:1.6;">
-        Every step — from resident registration and document issuance to disaster response, GIS mapping, budget tracking, and emergency SOS — was enforced by the system. Each role did exactly what their permission allows. Nothing more.
+        Every step — from resident registration, Excel import, ayuda distribution, and document issuance to disaster response, GIS mapping, and budget tracking — was enforced by the system. Each role did exactly what their permission allows. Nothing more.
       </p>
     </div>
 
     <!-- Complete trail -->
     <div style="background:#ffffff;border:1px solid rgba(12,26,58,0.08);border-radius:14px;overflow:hidden;margin-bottom:28px;" class="reveal">
-      <div style="padding:12px 16px;background:var(--deep);border-bottom:1px solid rgba(12,26,58,0.07);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t70);">Complete Operational Trail — 12 Scenes</div>
+      <div style="padding:12px 16px;background:var(--deep);border-bottom:1px solid rgba(12,26,58,0.07);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t70);">Complete Operational Trail — 14 Scenes</div>
       <div class="action-item">
         <div class="action-num" style="background:var(--secretary);">✓</div>
-        <div class="action-text"><strong>Secretary</strong> — logged in (RBAC enforced), registered Juan Dela Cruz, managed household members, issued Barangay Clearance PDF, showcased all 12 document types, managed resident status (TRANSFERRED)</div>
+        <div class="action-text"><strong>Secretary</strong> — RBAC login, registered Juan Dela Cruz, ran ayuda program with beneficiary claim tracking, issued Barangay Clearance PDF, showcased 12 document types, set resident status to TRANSFERRED</div>
       </div>
       <div class="action-item">
         <div class="action-num" style="background:var(--captain);">✓</div>
-        <div class="action-text"><strong>Captain</strong> — filed and tracked a blotter case, created Typhoon Carina disaster event, mapped household risk levels, reviewed live analytics dashboard with population charts</div>
+        <div class="action-text"><strong>Captain</strong> — blotter case workflow, Typhoon Carina disaster event, GIS risk map, dashboard with <strong>active-only</strong> population metrics</div>
       </div>
       <div class="action-item">
         <div class="action-num" style="background:var(--treasurer);">✓</div>
-        <div class="action-text"><strong>Treasurer</strong> — created Budget Year 2025, allocated funds by category, recorded a transaction — Secretary was blocked from this module entirely</div>
+        <div class="action-text"><strong>Treasurer</strong> — budget year, allocations, transactions; read-only ayuda oversight — no access to Residents or Documents</div>
       </div>
       <div class="action-item">
         <div class="action-num" style="background:var(--super);">✓</div>
-        <div class="action-text"><strong>Super Admin</strong> — created, edited, and deleted a user account; safeguards prevented self-deletion and last-admin deactivation; uploaded profile photo via Cloudinary</div>
+        <div class="action-text"><strong>Super Admin</strong> — Excel import to Taruc with barangay scope, user/purok/barangay settings, import duplicate gating, profile photo upload</div>
+      </div>
+      <div class="action-item">
+        <div class="action-num" style="background:var(--brgyadmin);">✓</div>
+        <div class="action-text"><strong>Barangay Admin</strong> — full Taruc operations plus user management; bulk resident removal with password confirmation (INACTIVE status)</div>
       </div>
     </div>
 
     <div class="summary-grid reveal">
       <div class="summary-card">
+        <div class="summary-icon">🤝</div>
+        <div class="summary-title">Ayuda Tracking</div>
+        <div class="summary-desc">Programs, beneficiaries, claim status, and progress bars — barangay-scoped with duplicate prevention per program.</div>
+      </div>
+      <div class="summary-card">
         <div class="summary-icon">🔐</div>
         <div class="summary-title">Role Enforcement</div>
-        <div class="summary-desc">6 roles, two-layer enforcement: Next.js middleware + server-side API validation. No bypass possible.</div>
+        <div class="summary-desc">7 roles, two-layer enforcement: Next.js middleware + server-side API validation. No bypass possible.</div>
       </div>
       <div class="summary-card">
         <div class="summary-icon">📄</div>
@@ -1137,7 +1229,7 @@ body{
       <div class="summary-card">
         <div class="summary-icon">📊</div>
         <div class="summary-title">Live Dashboard</div>
-        <div class="summary-desc">Population stats, classification counts, age distribution, civil status, and blotter/document alerts — always current.</div>
+        <div class="summary-desc">Active-resident population stats, classifications, age/sex/purok charts, disaster metrics — always current from PostgreSQL.</div>
       </div>
       <div class="summary-card">
         <div class="summary-icon">🏆</div>
