@@ -47,8 +47,9 @@ export function DeleteHouseholdButton({ householdId }: { householdId: string }) 
         <DialogHeader>
           <DialogTitle>Delete household</DialogTitle>
           <DialogDescription>
-            This will permanently delete the household record. All members must
-            be removed first. This action cannot be undone.
+            This will permanently delete the household record. Remove all active
+            members first. Any disaster risk profile for this household will also
+            be removed. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

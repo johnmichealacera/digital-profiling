@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
+import { Prisma } from "@/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { householdSchema } from "@/lib/validations/household.schema"
 import { getServerSession } from "next-auth"
@@ -157,12 +158,59 @@ export async function DELETE(
 
   if (residentCount > 0) {
     return NextResponse.json(
-      { error: "Cannot delete a household that still has active members. Remove all members first." },
+      {
+        error:
+          "Cannot delete a household that still has active members. Remove all members first.",
+      },
       { status: 400 }
     )
   }
 
-  await prisma.household.delete({ where: { id } })
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Disaster profiles use ON DELETE RESTRICT — must remove before household delete
+      await tx.householdDisasterProfile.deleteMany({
+        where: { householdId: id },
+      })
+
+      // Unlink any non-active residents still pointing at this household
+      await tx.resident.updateMany({
+        where: { householdId: id },
+        data: {
+          householdId: null,
+          isHouseholdHead: false,
+          relationshipToHead: null,
+        },
+      })
+
+      await tx.household.delete({ where: { id } })
+    })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === "P2003") {
+        return NextResponse.json(
+          {
+            error:
+              "Cannot delete household: it is still referenced by other records. Remove disaster risk profiles and unlink all residents first.",
+          },
+          { status: 409 }
+        )
+      }
+      if (e.code === "P2025") {
+        return NextResponse.json({ error: "Household not found" }, { status: 404 })
+      }
+    }
+    console.error("Household delete failed:", e)
+    return NextResponse.json(
+      { error: "Failed to delete household. Please try again or contact support." },
+      { status: 500 }
+    )
+  }
+
+  revalidatePath("/households")
+  revalidatePath(`/households/${id}`)
+  revalidatePath("/map")
+  revalidatePath("/disaster")
 
   return new NextResponse(null, { status: 204 })
 }
