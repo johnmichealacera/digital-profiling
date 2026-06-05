@@ -120,7 +120,8 @@ Dean, College of Information Technology
 | &nbsp;&nbsp;&nbsp;&nbsp; Figure 12. GIS Household Mapping | 47 |
 | &nbsp;&nbsp;&nbsp;&nbsp; Figure 13. Reports and Export | 48 |
 | &nbsp;&nbsp;&nbsp;&nbsp; Figure 14. Settings Management | 49 |
-| 5.2 System Evaluation | 50 |
+| &nbsp;&nbsp;&nbsp;&nbsp; Figure 15. Ayuda (Government Aid) Management | 50 |
+| 5.2 System Evaluation | 51 |
 | &nbsp;&nbsp;&nbsp;&nbsp; A. Functionality | 51 |
 | &nbsp;&nbsp;&nbsp;&nbsp; B. Efficiency | 52 |
 | &nbsp;&nbsp;&nbsp;&nbsp; C. Usability | 53 |
@@ -169,17 +170,17 @@ Above all, we offer our gratitude to **God Almighty**, for the wisdom, health, a
 
 The rapid advancement of digital technology has significantly transformed the way local government units manage information and deliver public services. However, many barangays in the Philippines, including Barangay Taruc in Socorro, Surigao del Norte, still rely on manual and paper-based systems for resident record management, document processing, and administrative operations. These traditional methods often result in inefficiencies such as delayed transactions, data inconsistency, difficulty in record retrieval, and an increased risk of data loss, misplacement, and deterioration.
 
-This study aimed to design, develop, and evaluate a **Digital Residents for Pioneering and Information Management System for Barangay Taruc** — a comprehensive, web-based platform designed to address these longstanding operational challenges. The proposed system serves as a centralized digital platform for managing resident profiles, household information, barangay document issuance, blotter recording, budget management, community projects monitoring, health records, disaster preparedness, and geographic household mapping. It is designed to automate routine administrative tasks, enhance data accuracy, improve service efficiency, and ensure the secure storage of community records.
+This study aimed to design, develop, and evaluate a **Digital Residents for Pioneering and Information Management System for Barangay Taruc** — a comprehensive, web-based platform designed to address these longstanding operational challenges. The proposed system serves as a centralized digital platform for managing resident profiles, household information, barangay document issuance, blotter recording, budget management, community projects monitoring, health records, disaster preparedness, government aid (ayuda) distribution, and geographic household mapping. It is designed to automate routine administrative tasks, enhance data accuracy, improve service efficiency, and ensure the secure storage of community records.
 
 The system was developed using a modern full-stack technology architecture composed of Next.js 16 with the App Router, TypeScript, PostgreSQL, Prisma ORM, NextAuth.js v4, Tailwind CSS v4, and shadcn/ui. Supporting libraries include Recharts for data visualization, Leaflet and react-leaflet for interactive GIS mapping, and pdf-lib for automated PDF document generation.
 
-The system encompasses fourteen (14) core functional modules: Resident Management, Household Management, Document Issuance (twelve document types), Blotter Recording, Barangay Officials Directory, Budget Management, Community Projects Monitoring, Health Records, Disaster Management, GIS Household Mapping, Analytics Dashboard, Report Generation, User Authentication with Role-Based Access Control (six defined roles), and Settings Management.
+The system encompasses fifteen (15) core functional modules: Resident Management, Household Management, Document Issuance (twelve document types), Blotter Recording, Barangay Officials Directory, Budget Management, Community Projects Monitoring, Health Records, Disaster Management, Ayuda (Government Aid) Management, GIS Household Mapping, Analytics Dashboard, Report Generation, User Authentication with Role-Based Access Control (six defined roles), and Settings Management.
 
 System evaluation was conducted based on the ISO 9126-1 software quality model, assessing the system across six quality characteristics: Functionality, Efficiency, Usability, Reliability, Maintainability, and Portability. Overall assessment results confirmed that the system meets the requirements for a reliable, user-friendly, and maintainable barangay information management platform.
 
 The implementation of this digital information management system is expected to improve the quality of barangay services, strengthen administrative transparency, support data-driven planning and decision-making, and contribute to the modernization of local governance in Barangay Taruc — aligned with national initiatives promoting digital transformation in Philippine local government units.
 
-**Keywords:** Barangay Information System, Digital Profiling, Resident Management, Document Issuance, Disaster Management, GIS Mapping, Role-Based Access Control, Next.js, Local Governance
+**Keywords:** Barangay Information System, Digital Profiling, Resident Management, Document Issuance, Ayuda Management, Disaster Management, GIS Mapping, Role-Based Access Control, Next.js, Local Governance
 
 ---
 
@@ -267,6 +268,7 @@ This study focuses on the design, creation, implementation, and evaluation of th
 - **Analytics Dashboard** — Summary statistics and visual charts covering population demographics, document activity, disaster preparedness data, and program information;
 - **Report Generation** — Data export and CSV report generation tools for planning and administrative purposes, covering residents, disaster profiles, evacuation centers, and missing persons;
 - **User Authentication and Role-Based Access Control** — Credential-based login with six (6) defined roles (Super Admin, Captain, Secretary, Treasurer, Kagawad, SK Chairman), each with distinct module-level access permissions;
+- **Ayuda (Government Aid) Management** — Creation and tracking of barangay aid programs (cash, food packs, calamity relief, senior citizen assistance, and related types), beneficiary enrollment linked to resident profiles, distribution status tracking (Pending, Claimed, Unclaimed, Returned), and program-level summary statistics for transparency in aid distribution;
 - **Settings Management** — Administration of barangay configurations, purok definitions, and user account management.
 
 #### Limitations of the Study
@@ -509,7 +511,7 @@ The **Rapid Application Development (RAD) model** was selected as the software d
 
 - The system requirements, while comprehensive, were well-understood from barangay operations and could be defined with sufficient specificity to guide development;
 - Early and frequent user feedback from barangay staff was essential to ensure that the system's design reflected actual operational workflows and user needs;
-- The diversity of modules (fourteen distinct functional areas) necessitated a structured, incremental approach to development that allowed each module to be built, tested, and refined before integration with the broader system;
+- The diversity of modules (fifteen distinct functional areas) necessitated a structured, incremental approach to development that allowed each module to be built, tested, and refined before integration with the broader system;
 - The project timeline required efficient delivery of a functional system within the academic year, making the speed advantage of RAD methodology particularly relevant.
 
 The RAD development model was implemented across four sequential phases:
@@ -537,7 +539,7 @@ Structured interviews were conducted with key stakeholders, including the Barang
 Based on the analysis findings, a comprehensive system design was produced. This included:
 
 - A system architecture diagram defining the relationships between the frontend, backend API, authentication layer, and database;
-- A complete database schema designed in Prisma's schema definition language (SDL), covering all entities and their relationships across all fourteen modules;
+- A complete database schema designed in Prisma's schema definition language (SDL), covering all entities and their relationships across all fifteen modules;
 - User interface wireframes and layout mockups for key pages including the dashboard, resident list, document request form, and disaster management interface;
 - A role-permission matrix defining which operations each of the six user roles could perform across each module;
 - A data flow diagram illustrating how information moves through the system for key use cases such as document request processing and disaster event management.
@@ -578,7 +580,8 @@ The complete database schema was implemented in Prisma's schema definition langu
 - `BudgetYear`, `BudgetAllocation`, and `BudgetTransaction` — Hierarchical budget tracking by year, category, and individual transaction;
 - `Project` and `ProjectUpdate` — Community project records and progress history entries;
 - `HealthRecord` — Resident health data by category;
-- `DisasterEvent`, `HouseholdDisasterProfile`, `EvacuationCenter`, and `MissingPersonReport` — Full disaster management data with geographic and status fields.
+- `DisasterEvent`, `HouseholdDisasterProfile`, `EvacuationCenter`, and `MissingPersonReport` — Full disaster management data with geographic and status fields;
+- `AyudaProgram` and `AyudaDistribution` — Government aid program definitions, fund source and type classification, beneficiary linkage to residents, and distribution status tracking (Pending, Claimed, Unclaimed, Returned).
 
 Proper foreign key relationships, index configurations, and cascade delete behaviors were implemented to maintain data integrity and optimize query performance.
 
@@ -592,7 +595,7 @@ System development proceeded through eight structured iterations, each deliverin
 - **Iteration 4 — Blotter and Officials:** Blotter incident recording with complaint classification and resident linkage, case status workflow implementation, hearing schedule management, and barangay officials directory with photo management;
 - **Iteration 5 — Map and Dashboard:** Leaflet-based interactive GIS map with household coordinate plotting, analytics dashboard with Recharts visualizations (age distribution, sex ratio, purok population, civil status), and real-time summary statistic cards;
 - **Iteration 6 — Disaster Preparedness:** Disaster event creation and status management, household disaster risk profiling, evacuation center management with map integration, missing persons reporting and tracking, and disaster-aware map overlay;
-- **Iteration 7 — Health, Budget, and Projects:** Health records module with category-based data entry, budget management with multi-category allocation and transaction recording, and community projects monitoring with status tracking and update history;
+- **Iteration 7 — Health, Budget, Projects, and Ayuda:** Health records module with category-based data entry, budget management with multi-category allocation and transaction recording, community projects monitoring with status tracking and update history, and Ayuda (government aid) management with program registration (type, fund source, budget, and lifecycle status), beneficiary enrollment via resident search, per-beneficiary distribution records (amount, in-kind items, quantity), claim status workflow, duplicate-beneficiary prevention, and barangay-scoped program visibility;
 - **Iteration 8 — Reports and Export:** CSV export functionality for residents, document records, disaster profiles, evacuation centers, and missing persons; report generation interface with configurable filters.
 
 #### Phase 3: System Testing
@@ -636,6 +639,7 @@ The module routing structure follows the Next.js App Router convention, with eac
 | `/disaster` | Disaster Management |
 | `/map` | GIS Household Map |
 | `/reports` | Reports and Export |
+| `/ayuda` | Ayuda (Government Aid) Management |
 | `/settings` | Settings Management |
 
 ### 4.4 Data Gathering Procedure
@@ -678,7 +682,7 @@ The following table summarizes the tools and technologies used in the developmen
 
 ### 4.6 Database Design Summary
 
-The database schema comprises seventeen primary data models organized across the system's fourteen functional modules. The following table summarizes the key models and their primary attributes:
+The database schema comprises nineteen primary data models organized across the system's fifteen functional modules. The following table summarizes the key models and their primary attributes:
 
 | Model | Key Attributes | Relations |
 |---|---|---|
@@ -699,6 +703,8 @@ The database schema comprises seventeen primary data models organized across the
 | HouseholdDisasterProfile | riskLevel, isEvacuated | Household (N:1), DisasterEvent (N:1), EvacuationCenter (N:1) |
 | EvacuationCenter | name, address, capacity, gpsLat, gpsLng | HouseholdDisasterProfile (1:N) |
 | MissingPersonReport | status, reportDate, foundDate | Resident (N:1), DisasterEvent (N:1) |
+| AyudaProgram | name, type, source, totalBudget, status, startDate, endDate | Barangay (N:1), AyudaDistribution (1:N) |
+| AyudaDistribution | amount, items, quantity, unit, status, claimedAt, claimedByName | AyudaProgram (N:1), Resident (N:1) |
 
 ### 4.7 Ethical and Security Considerations
 
@@ -733,7 +739,7 @@ Barangay officials and staff are expected to use the system in accordance with t
 
 ### 5.1 Implementation Results
 
-The Digital Residents for Pioneering and Information Management System for Barangay Taruc was successfully developed and deployed as a comprehensive, web-based platform covering all fourteen identified functional modules. The system was implemented using the full technology stack described in Chapter 3, and development proceeded through the eight iterative phases described in Chapter 4. This section presents the results of the implementation by describing each functional module as realized in the final system, including its route, interface components, key features, and the business rules governing its operation.
+The Digital Residents for Pioneering and Information Management System for Barangay Taruc was successfully developed and deployed as a comprehensive, web-based platform covering all fifteen identified functional modules. The system was implemented using the full technology stack described in Chapter 3, and development proceeded through the eight iterative phases described in Chapter 4. This section presents the results of the implementation by describing each functional module as realized in the final system, including its route, interface components, key features, and the business rules governing its operation.
 
 ---
 
@@ -1184,6 +1190,42 @@ The Settings Management module provides Super Admin and authorized users with to
 
 ---
 
+#### Figure 15. Ayuda (Government Aid) Management
+
+**Routes:** `/ayuda`, `/ayuda/new`, `/ayuda/[id]`, `/ayuda/[id]/edit`
+
+The Ayuda (Government Aid) Management module enables barangay staff to plan, record, and monitor government and community assistance programs—from barangay-funded relief to DSWD and NGO-sourced aid—and to track which residents received aid, how much or what items were distributed, and whether each beneficiary has claimed their allocation.
+
+**Interface Components:**
+- Ayuda Programs list page with summary cards: Total Programs, Active/Ongoing, Total Beneficiaries, and Claimed count
+- Program cards showing program name, status badge (Planned, Ongoing, Completed, Cancelled), ayuda type badge, fund source, beneficiary count, claimed count, and claim progress bar
+- New Program button (visible to authorized roles) linking to the program creation form
+- Program creation/edit form with fields: program name, ayuda type, fund source, program status, total budget/value, start date, end date, description, and barangay selector (Super Admin only)
+- Program detail page with program metadata, Edit and Delete actions, distribution summary cards (Total, Claimed, Pending, Unclaimed), and claim progress indicator
+- Beneficiaries table with columns for resident name, amount/items/quantity, distribution status, claimed-by name, claim date, and row actions
+- Add Beneficiary dialog with resident search (typeahead), optional amount, items description, quantity, unit, and remarks fields
+- Per-beneficiary status dropdown (Pending, Claimed, Unclaimed, Returned) with optional “Received by” field when status is Claimed
+- Remove beneficiary control and program delete confirmation dialog
+
+**Key Features:**
+- Ayuda program registration supporting eleven (11) program types (Cash, Food Pack, Medical, Educational, Livelihood, Calamity Relief, Senior Citizen, PWD Assistance, Solo Parent, Scholarship, and Other) and eight (8) fund sources (Barangay Fund, Municipal Fund, Provincial Fund, National Fund, DSWD, NGO, and Other)
+- Program lifecycle management through statuses: Planned, Ongoing, Completed, and Cancelled, with optional start and end dates and total budget tracking
+- Beneficiary enrollment by linking existing resident records through searchable lookup, with support for cash amounts, in-kind item descriptions, quantities, and units per distribution
+- Distribution status workflow (Pending → Claimed / Unclaimed / Returned) with automatic claim timestamp when marked as Claimed and optional recorder of who received the aid
+- Tenant-scoped data visibility so each barangay (or municipality-scoped account) sees only programs and distributions for its jurisdiction; Super Admin may assign programs to a selected barangay
+- Program-level and list-level analytics showing beneficiary totals, claimed percentages, and progress bars for monitoring distribution completion during active relief operations
+- Role-based access: Captain, Secretary, Barangay Admin, and Super Admin may create programs and add beneficiaries; Captain, Secretary, Barangay Admin, and Super Admin may update program and distribution records; program and beneficiary deletion is restricted to Super Admin and Barangay Admin; Treasurer and Kagawad have read access for oversight
+
+**Business Rules:**
+- Each resident may be enrolled only once per ayuda program; duplicate beneficiary entries are rejected with an appropriate error message
+- Ayuda programs and distributions are scoped to a single barangay; users outside the program’s barangay tenant scope cannot view or modify that program’s records
+- Super Admin accounts must select a target barangay when creating a program; barangay-scoped staff accounts automatically associate new programs with their assigned barangay
+- Setting a distribution status to Claimed records the claim date automatically; clearing Claimed status clears the claim timestamp
+- Deleting an ayuda program removes all associated distribution records through database cascade rules
+- Only users with create permission on the ayuda module may add beneficiaries; only users with delete permission may remove beneficiaries or delete entire programs
+
+---
+
 ### 5.2 System Evaluation
 
 The system was evaluated based on the ISO 9126-1 international software quality standard, which defines six major quality characteristics: Functionality, Efficiency, Usability, Reliability, Maintainability, and Portability. Evaluation was conducted through structured evaluation instruments administered to system evaluators, with responses measured on a five-point Likert scale (1 = Strongly Disagree, 5 = Strongly Agree). Verbal description equivalents are: 4.50–5.00 = Outstanding; 3.50–4.49 = Very Satisfactory; 2.50–3.49 = Satisfactory; 1.50–2.49 = Fair; 1.00–1.49 = Poor.
@@ -1202,6 +1244,7 @@ Functionality assesses whether the system provides the functions needed by its u
 | The community projects module accurately records and displays project status and progress updates | | |
 | The health records module correctly stores and retrieves resident health data | | |
 | The disaster management module correctly tracks disaster events, risk profiles, and evacuation data | | |
+| The ayuda module correctly records aid programs, enrolls beneficiaries, and tracks distribution claim status | | |
 | The GIS map correctly plots household locations based on recorded GPS coordinates | | |
 | The role-based access control system correctly restricts module access according to user roles | | |
 | The analytics dashboard correctly displays up-to-date statistics from the database | | |
@@ -1407,7 +1450,7 @@ The study was grounded in a review of related literature that consistently affir
 
 The system was developed using the Rapid Application Development (RAD) methodology, proceeding through four phases: System Analysis and Design, System Development, System Testing, and System Implementation. The technology stack comprised Next.js 16 with the App Router, TypeScript, PostgreSQL, Prisma ORM v7, NextAuth.js v4, Tailwind CSS v4, shadcn/ui, Recharts, Leaflet with react-leaflet, pdf-lib, and bcryptjs. Development proceeded through eight iterative cycles, with each iteration delivering a functional module increment before advancing to the next.
 
-The completed system encompasses fourteen functional modules: (1) User Authentication and Role-Based Access Control (6 defined roles), (2) Analytics Dashboard, (3) Resident Management, (4) Household Management, (5) Document Management (12 document types with PDF generation), (6) Blotter Recording, (7) Officials Directory, (8) Budget Management, (9) Community Projects Monitoring, (10) Health Records, (11) Disaster Management, (12) GIS Household Mapping, (13) Reports and Export, and (14) Settings Management. The system consolidates all of these administrative functions into a single, integrated platform with a consistent user interface and a unified relational database.
+The completed system encompasses fifteen functional modules: (1) User Authentication and Role-Based Access Control (6 defined roles), (2) Analytics Dashboard, (3) Resident Management, (4) Household Management, (5) Document Management (12 document types with PDF generation), (6) Blotter Recording, (7) Officials Directory, (8) Budget Management, (9) Community Projects Monitoring, (10) Health Records, (11) Disaster Management, (12) Ayuda (Government Aid) Management, (13) GIS Household Mapping, (14) Reports and Export, and (15) Settings Management. The system consolidates all of these administrative functions into a single, integrated platform with a consistent user interface and a unified relational database.
 
 System evaluation was conducted using the ISO 9126-1 software quality model, assessing the system across six quality characteristics — Functionality, Efficiency, Usability, Reliability, Maintainability, and Portability — through structured evaluation instruments administered to system evaluators.
 
@@ -1415,7 +1458,7 @@ System evaluation was conducted using the ISO 9126-1 software quality model, ass
 
 Based on the development process, implementation results, and system evaluation findings, the researchers draw the following conclusions:
 
-1. **The system successfully addresses the identified operational gaps in Barangay Taruc's administrative processes.** The fourteen functional modules collectively replace the manual, paper-based methods previously used for resident record management, document issuance, blotter recording, budget tracking, project monitoring, health data management, and disaster preparedness coordination.
+1. **The system successfully addresses the identified operational gaps in Barangay Taruc's administrative processes.** The fifteen functional modules collectively replace the manual, paper-based methods previously used for resident record management, document issuance, blotter recording, budget tracking, project monitoring, health data management, disaster preparedness coordination, and government aid distribution tracking.
 
 2. **The automated document generation feature significantly reduces the time and effort required for barangay document issuance.** By pre-filling resident and barangay data into properly formatted PDF certificates with unique control numbers, the system eliminates manual typewriting and reduces processing time from hours or days to a matter of minutes.
 
