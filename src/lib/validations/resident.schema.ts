@@ -88,3 +88,35 @@ export const residentSchema = z.object({
 })
 
 export type ResidentFormData = z.infer<typeof residentSchema>
+
+/** Simplified schema for public QR self-registration (no household assignment). */
+export const residentPublicRegistrationSchema = z.object({
+  barangayId: z.string().min(1, "Barangay is required"),
+  firstName: z.string().min(1, "First name is required"),
+  middleName: z.string().optional().nullable(),
+  lastName: z.string().min(1, "Last name is required"),
+  suffix: z.string().optional().nullable(),
+  sex: z.enum(["MALE", "FEMALE"]),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  placeOfBirth: z.string().optional().nullable(),
+  civilStatus: z.enum([
+    "SINGLE",
+    "MARRIED",
+    "WIDOWED",
+    "SEPARATED",
+    "ANNULLED",
+    "LIVE_IN",
+  ]),
+  contactNo: z.string().min(1, "Contact number is required"),
+  emailAddress: z.string().email().optional().nullable().or(z.literal("")),
+  previousAddress: z.string().min(1, "Current address is required"),
+  occupation: z.string().optional().nullable(),
+  voterStatus: z.boolean().default(false),
+  isSeniorCitizen: z.boolean().default(false),
+  isPwd: z.boolean().default(false),
+  is4PsBeneficiary: z.boolean().default(false),
+})
+
+export type ResidentPublicRegistrationData = z.infer<
+  typeof residentPublicRegistrationSchema
+>

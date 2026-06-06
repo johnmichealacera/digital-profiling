@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { ResidentTable } from "@/components/residents/resident-table"
 import { ResidentFilters } from "@/components/residents/resident-filters"
 import { ResidentImportDialog } from "@/components/residents/resident-import-dialog"
+import { ResidentQrRegistrationDialog } from "@/components/residents/resident-qr-registration-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
@@ -95,7 +96,14 @@ export default async function ResidentsPage({ searchParams }: Props) {
         ? { barangayId: tenantIds[0]! }
         : { barangayId: { in: tenantIds } }
 
-  const [residents, total, puroks] = await Promise.all([
+  const barangayWhere: Prisma.BarangayWhereInput | undefined =
+    tenantIds === null
+      ? undefined
+      : tenantIds.length > 0
+        ? { id: { in: tenantIds } }
+        : { id: { in: [] } }
+
+  const [residents, total, puroks, barangayRows] = await Promise.all([
     prisma.resident.findMany({
       where,
       skip: (page - 1) * limit,
@@ -110,7 +118,23 @@ export default async function ResidentsPage({ searchParams }: Props) {
       where: purokWhere,
       orderBy: { order: "asc" },
     }),
+    prisma.barangay.findMany({
+      where: barangayWhere,
+      select: {
+        id: true,
+        name: true,
+        municipality: { select: { name: true, province: true } },
+      },
+      orderBy: [{ municipality: { name: "asc" } }, { name: "asc" }],
+    }),
   ])
+
+  const barangays = barangayRows.map((b) => ({
+    id: b.id,
+    name: b.name,
+    municipalityName: b.municipality.name,
+    province: b.municipality.province,
+  }))
 
   const totalPages = Math.ceil(total / limit)
   const residentsForTable = serializeResidentsForClient(residents)
@@ -125,7 +149,12 @@ export default async function ResidentsPage({ searchParams }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {canImportResidents && <ResidentImportDialog />}
+          {canImportResidents && (
+            <>
+              <ResidentQrRegistrationDialog barangays={barangays} />
+              <ResidentImportDialog />
+            </>
+          )}
           <Button asChild>
             <Link href="/residents/new">
               <Plus className="mr-2 h-4 w-4" />

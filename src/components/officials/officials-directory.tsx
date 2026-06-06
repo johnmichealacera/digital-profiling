@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, Phone, Pencil, Trash2, User, Upload, X } from "lucide-react"
+import { Loader2, Plus, Phone, Pencil, User, Upload, X } from "lucide-react"
 import { formatResidentName, formatShortDate } from "@/lib/utils"
 import {
   isCloudinaryBrowserUploadConfigured,
@@ -200,17 +200,6 @@ export function OfficialsDirectory({
     if (listRes.ok) setOfficials(await listRes.json())
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Remove this official?")) return
-    const res = await fetch(`/api/officials/${id}`, { method: "DELETE" })
-    if (!res.ok) {
-      toast.error("Failed to delete")
-      return
-    }
-    toast.success("Official removed")
-    setOfficials((prev) => prev.filter((o) => o.id !== id))
-  }
-
   function updateField(field: string, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
@@ -287,9 +276,6 @@ export function OfficialsDirectory({
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" onClick={() => openEdit(o)}>
               <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleDelete(o.id)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
         </CardContent>
